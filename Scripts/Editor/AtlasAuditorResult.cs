@@ -48,8 +48,13 @@ namespace BrunoMikoski.AtlasAudior
 
         
         private Dictionary<SpriteAtlas, HashSet<Sprite>> atlasToUsedSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
+        public Dictionary<SpriteAtlas, HashSet<Sprite>> AtlasToUsedSprites => atlasToUsedSprites;
+
         private Dictionary<SpriteAtlas, HashSet<Sprite>> atlasToNotUsedSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
+        public Dictionary<SpriteAtlas, HashSet<Sprite>> AtlasToNotUsedSprites => atlasToNotUsedSprites;
+
         private HashSet<SpriteAtlas> notUsedAtlases = new HashSet<SpriteAtlas>();
+        public HashSet<SpriteAtlas> NotUsedAtlases => notUsedAtlases;
 
         private bool isReferencesDirty;
         
