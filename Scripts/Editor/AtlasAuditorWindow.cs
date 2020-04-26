@@ -155,8 +155,6 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.BeginVertical("Box");
 
-            Debug.Log("");
-            
             if (AtlasAuditorResult.AtlasToUsedSprites.Count > 0)
             {
                 if (DrawStringFoldout("In Use Atlas", ATLAS_VIEW_KEY))
