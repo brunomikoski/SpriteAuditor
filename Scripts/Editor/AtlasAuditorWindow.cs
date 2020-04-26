@@ -4,21 +4,10 @@ using BrunoMikoski.AtlasAudior.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.AtlasAudior
 {
-    [Flags]
-    internal enum SpriteDetails
-    {
-        None = 1,
-        UsageCount = 2,
-        SizeDetails = 4,
-        ReferencesPath = 8,
-        SceneReferences = 16,
-        All = UsageCount | SizeDetails | ReferencesPath | SceneReferences,
-    }
     public class AtlasAuditorWindow : EditorWindow
     {
         private const string ATLAS_AUDITOR_STORAGE_KEY = "ATLAS_AUDITOR_STORAGE_KEY";
@@ -28,11 +17,6 @@ namespace BrunoMikoski.AtlasAudior
         private const string SCENE_VIEW_KEY = "SCENE_VIEW_KEY";
 
 
-        private enum VisualizationType
-        {
-            Scene,
-            Atlas
-        }
         
         private bool isRecording;
 
@@ -51,11 +35,6 @@ namespace BrunoMikoski.AtlasAudior
             }
         }
 
-        private Dictionary<SceneAsset, bool> sceneToFoldout = new Dictionary<SceneAsset, bool>();
-        private Dictionary<SceneAsset, bool> sceneToSingleSprites = new Dictionary<SceneAsset, bool>();
-        private Dictionary<SpriteAtlas, bool> atlasToFoldout = new Dictionary<SpriteAtlas, bool>();
-        private Dictionary<Sprite, bool> spriteToFoldout = new Dictionary<Sprite, bool>();
-
         private Dictionary<string, bool> keyToFoldout = new Dictionary<string, bool>();
 
         private bool dontDestroyOnLoadFoldout;
@@ -70,7 +49,7 @@ namespace BrunoMikoski.AtlasAudior
         private bool showSpritesWithoutAtlas;
         private float spriteUsageSizeThreshold = 0.25f;
 
-        [MenuItem("Tools/Atlas Auditor")]
+        [MenuItem("Tools/Sprite Auditor")]
         public static void OpenWindow()
         {
             AtlasAuditorWindow window = GetWindow<AtlasAuditorWindow>("Atlas Auditor");
@@ -136,11 +115,8 @@ namespace BrunoMikoski.AtlasAudior
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, false, false);
 
             DrawSettings();
-            
             DrawResults();
             
-            // DrawControls();
-            // DrawLastResults();
             EditorGUILayout.EndScrollView();
         }
 
@@ -179,6 +155,8 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.BeginVertical("Box");
 
+            Debug.Log("");
+            
             if (AtlasAuditorResult.AtlasToUsedSprites.Count > 0)
             {
                 if (DrawStringFoldout("In Use Atlas", ATLAS_VIEW_KEY))
@@ -332,7 +310,7 @@ namespace BrunoMikoski.AtlasAudior
                     DrawSpriteUsageCount(sprite);
 
                 if (details.HasFlag(SpriteDetails.SizeDetails))
-                    DrawSpriteSizeDetails(sprite);
+                    DrawSpriteSizeDetails(sprite);    
 
                 if (details.HasFlag(SpriteDetails.ReferencesPath))
                     DrawSpriteReferencesPath(sceneAsset, sprite);
