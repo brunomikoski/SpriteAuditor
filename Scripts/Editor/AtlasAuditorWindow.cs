@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using BrunoMikoski.AtlasAudior.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.Sprites;
+using UnityEditor.U2D;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
+using SpriteAtlasExtensions = UnityEditor.U2D.SpriteAtlasExtensions;
 
 namespace BrunoMikoski.AtlasAudior
 {
@@ -53,6 +55,7 @@ namespace BrunoMikoski.AtlasAudior
         private VisualizationType visualizationType = VisualizationType.Scene;
         private AtlasAuditorForwarder atlasAuditorForwarder;
         private bool showSpritesWithoutAtlas;
+        private float spriteUsageSizeThreshold = 0.25f;
 
         [MenuItem("Tools/Atlas Auditor")]
         public static void OpenWindow()
@@ -73,7 +76,6 @@ namespace BrunoMikoski.AtlasAudior
         
         private void OnPlayModeChanged(PlayModeStateChange obj)
         {
-            AtlasAuditorResult?.SetReferencesDirty(true);
             if (EditorApplication.isPlaying)
             {
                 if (recordOnPlay)
@@ -83,6 +85,7 @@ namespace BrunoMikoski.AtlasAudior
             {
                 StopRecording();
             }
+            AtlasAuditorResult?.SetReferencesDirty(true);
         }
 
         private void LoadOrCreateAtlasResult()
@@ -162,10 +165,18 @@ namespace BrunoMikoski.AtlasAudior
         private void DrawResultsByAtlas()
         {
             EditorGUILayout.BeginVertical("Box");
-            // foreach (var VARIABLE in AtlasAuditorResult.KnowAtlas)
-            // {
-            //     
-            // }
+
+            foreach (var atlasToSprites in AtlasAuditorResult.AtlasToAllSprites)
+            {
+                if (DrawObjectFoldout(atlasToSprites.Key, atlasToFoldout))
+                {
+                    foreach (Sprite sprite in atlasToSprites.Value)
+                    {
+                        DrawSpriteField(sprite);
+                    }
+                }
+            }
+            
             EditorGUILayout.EndVertical();
         }
 
@@ -188,7 +199,7 @@ namespace BrunoMikoski.AtlasAudior
                         EditorGUI.indentLevel++;
                         foreach (Sprite sprite in AtlasAuditorResult.SceneToSingleSprites[sceneAsset])
                         {
-                            DrawSpriteField(sceneAsset, sprite);
+                            DrawSpriteField(sprite, sceneAsset);
                         }
                         EditorGUI.indentLevel--;
 
@@ -200,53 +211,50 @@ namespace BrunoMikoski.AtlasAudior
                 {
                     EditorGUILayout.BeginVertical("Box");
 
-                    if (!atlasToFoldout.ContainsKey(valuePair.Key))
-                        atlasToFoldout.Add(valuePair.Key, false);
-                    
-                    
-                    atlasToFoldout[valuePair.Key] = EditorGUILayout.Foldout(atlasToFoldout[valuePair.Key], valuePair.Key.name,
-                        EditorStyles.foldout);
-
-                    if (atlasToFoldout[valuePair.Key])
+                    if (DrawObjectFoldout(valuePair.Key, atlasToFoldout))
                     {
                         EditorGUI.indentLevel++;
-
-                        EditorGUILayout.ObjectField( valuePair.Key, typeof(SpriteAtlas), false);
-
-                        EditorGUILayout.Space();    
-                        foreach (Sprite sprite in valuePair.Value)
+                        foreach (Sprite sprite in AtlasAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][valuePair.Key])
                         {
-                            EditorGUILayout.ObjectField( sprite, typeof(Sprite), false);
+                            DrawSpriteField(sprite, sceneAsset);
                         }
                         EditorGUI.indentLevel--;
                     }
+                    
                     EditorGUILayout.EndVertical();
+
                 }
             }
             EditorGUILayout.EndVertical();
         }
 
-        private void DrawSpriteField(SceneAsset sceneAsset, Sprite sprite)
+        private bool DrawObjectFoldout<T>(T targetObject, Dictionary<T, bool> foldoutDictionary) where T:Object
         {
-            if(!spriteToFoldout.ContainsKey(sprite))
-                spriteToFoldout.Add(sprite, false);
-
-
-            EditorGUILayout.BeginVertical("Box");
+            if (!foldoutDictionary.ContainsKey(targetObject))
+                foldoutDictionary.Add(targetObject, false);
+            
             EditorGUILayout.BeginHorizontal();
-
+                 
             GUIStyle style = new GUIStyle(EditorStyles.foldout)
             {
                 fixedWidth = 5
             };
-            
-            spriteToFoldout[sprite] = EditorGUILayout.Foldout(spriteToFoldout[sprite], "", style);
+                    
+            foldoutDictionary[targetObject] = EditorGUILayout.Foldout(foldoutDictionary[targetObject], "", style);
             GUILayout.Space(-34);
-
-            EditorGUILayout.ObjectField(sprite, typeof(Sprite), false);
+                    
+            EditorGUILayout.ObjectField(targetObject, typeof(T), false);
             EditorGUILayout.EndHorizontal();
 
-            if (spriteToFoldout[sprite])
+
+            return foldoutDictionary[targetObject];
+        }
+
+        private void DrawSpriteField(Sprite sprite, SceneAsset sceneAsset = null)
+        {
+            EditorGUILayout.BeginVertical("Box");
+
+            if (DrawObjectFoldout(sprite, spriteToFoldout))
             {
                 EditorGUI.indentLevel++;
 
@@ -311,24 +319,29 @@ namespace BrunoMikoski.AtlasAudior
             EditorGUI.indentLevel++;
             Vector3 spriteMaxUseSize = AtlasAuditorResult.GetSpriteMaxUseSize(sprite);
             EditorGUILayout.LabelField(
-                $"Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height:{Mathf.RoundToInt(spriteMaxUseSize.y)}");
+                $"Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
 
             Vector3 sizeDifference = new Vector3(spriteMaxUseSize.x - sprite.rect.size.x,
                 spriteMaxUseSize.y - sprite.rect.size.y, 0);
 
             float differenceMagnitude = sizeDifference.magnitude / sprite.rect.size.magnitude;
-            
-            if (spriteMaxUseSize.sqrMagnitude > sprite.rect.size.sqrMagnitude)
+
+            if (Mathf.Abs(differenceMagnitude) > spriteUsageSizeThreshold)
             {
-                EditorGUILayout.HelpBox(
-                    $"Sprite found usage is {differenceMagnitude:P} times bigger than found usage, you may consider resizing it up",
-                    MessageType.Warning);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(
-                    $"Sprite found usage is {differenceMagnitude:P} times smaller than imported sprite settings, you may consider resizing it down",
-                    MessageType.Warning);
+                if (spriteMaxUseSize.sqrMagnitude > sprite.rect.size.sqrMagnitude)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Sprite used with a size {differenceMagnitude:P} times bigger than imported sprite size," +
+                        $" you may consider resizing it up",
+                        MessageType.Warning);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Sprite used with a size {differenceMagnitude:P} times smaller than imported sprite size," +
+                        $" you may consider resizing it down",
+                        MessageType.Warning);
+                }
             }
  
             EditorGUI.indentLevel--;
@@ -337,7 +350,10 @@ namespace BrunoMikoski.AtlasAudior
         private void TrySelectObjectAtPath(SceneAsset sceneAsset, string usePath)
         {
             if (!Application.isPlaying)
-                EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneAsset), OpenSceneMode.Additive);
+            {
+                if (sceneAsset != null)
+                    EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneAsset), OpenSceneMode.Additive);
+            }
             
             GameObject gameObject = GameObject.Find(usePath);
             if (gameObject == null)
@@ -355,6 +371,8 @@ namespace BrunoMikoski.AtlasAudior
 
             recordOnPlay = EditorGUILayout.ToggleLeft("Record on play", recordOnPlay);
 
+            spriteUsageSizeThreshold = EditorGUILayout.Slider("Size Difference Threshold", spriteUsageSizeThreshold, 0, 1);
+            
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginDisabledGroup(!EditorPrefs.HasKey(ATLAS_AUDITOR_STORAGE_KEY));
             if (GUILayout.Button("Clear Cache", EditorStyles.toolbarButton))
@@ -422,7 +440,7 @@ namespace BrunoMikoski.AtlasAudior
                 List<Sprite> usedSprites = new List<Sprite>();
                 List<Sprite> unusedSprites = new List<Sprite>();
 
-                foreach (Sprite sprite in AtlasAuditorResult.AtlasToSprites[targetAtlas])
+                foreach (Sprite sprite in AtlasAuditorResult.AtlasToAllSprites[targetAtlas])
                 {
                     if (AtlasAuditorResult.TryGetSpriteSceneUsages(sprite, out HashSet<SceneAsset> scenes))
                     {
@@ -460,120 +478,6 @@ namespace BrunoMikoski.AtlasAudior
             }
         }
 
-        private void DrawDontDestroyOnLoadResults()
-        {
-            dontDestroyOnLoadFoldout = EditorGUILayout.Foldout(dontDestroyOnLoadFoldout, "Don't Destroy On Load");
-
-            if (dontDestroyOnLoadFoldout)
-            {
-                EditorGUI.indentLevel++;
-                foreach (var atlasToSprites in AtlasAuditorResult.NoSceneAtlasToSprites)
-                {
-                    if (!atlasToFoldout.ContainsKey(atlasToSprites.Key))
-                        atlasToFoldout.Add(atlasToSprites.Key, false);
-                    
-                    atlasToFoldout[atlasToSprites.Key] = EditorGUILayout.Foldout(atlasToFoldout[atlasToSprites.Key], atlasToSprites.Key.name);
-                    if (atlasToFoldout[atlasToSprites.Key])
-                    {
-                        EditorGUI.indentLevel++;
-                        EditorGUILayout.ObjectField(atlasToSprites.Key.name, atlasToSprites.Key, typeof(SpriteAtlas), false);
-                        foreach (Sprite sprite in AtlasAuditorResult.NoSceneAtlasToSprites[atlasToSprites.Key])
-                        {
-                            EditorGUILayout.ObjectField(sprite.name, sprite, typeof(Object), false);
-                        }
-                        EditorGUI.indentLevel--;
-                    }
-                }
-
-                foreach (Sprite singleSprite in AtlasAuditorResult.NoSceneSingleSprites)
-                {
-                    EditorGUILayout.ObjectField(singleSprite.name, singleSprite, typeof(Object), false);
-                }
-                EditorGUI.indentLevel--;
-            }
-        }
-
-        private void DrawSceneResults(SceneAsset targetScene)
-        {
-            if (!sceneToFoldout.ContainsKey(targetScene))
-                sceneToFoldout.Add(targetScene, false);
-            
-            if (!sceneToSingleSprites.ContainsKey(targetScene))
-                sceneToSingleSprites.Add(targetScene, false);
-            
-
-            EditorGUILayout.BeginVertical("Box");
-            sceneToFoldout[targetScene] = EditorGUILayout.Foldout(sceneToFoldout[targetScene], targetScene.name, EditorStyles.foldout);
-            if (sceneToFoldout[targetScene])
-            {
-                EditorGUI.indentLevel++;
-                EditorGUILayout.ObjectField(targetScene.name, targetScene, typeof(SceneAsset), false);
-                
-                foreach (var sceneToSpriteAtlas in AtlasAuditorResult.SceneToSpriteAtlasToSprites[targetScene])
-                {
-                    if (!atlasToFoldout.ContainsKey(sceneToSpriteAtlas.Key))
-                        atlasToFoldout.Add(sceneToSpriteAtlas.Key, false);
-                    
-                    atlasToFoldout[sceneToSpriteAtlas.Key] = EditorGUILayout.Foldout(atlasToFoldout[sceneToSpriteAtlas.Key], sceneToSpriteAtlas.Key.name, EditorStyles.foldout);
-
-                    if (atlasToFoldout[sceneToSpriteAtlas.Key])
-                    {
-                        EditorGUI.indentLevel++;
-                        EditorGUILayout.ObjectField(sceneToSpriteAtlas.Key.name, sceneToSpriteAtlas.Key, typeof(SpriteAtlas), false);
-                        foreach (Sprite sprite in AtlasAuditorResult.SceneToSpriteAtlasToSprites[targetScene][sceneToSpriteAtlas.Key])
-                        {
-                            EditorGUILayout.ObjectField(sprite.name, sprite, typeof(Object), false);
-
-                            DrawSpriteDetails(sprite);
-                        }
-                        EditorGUI.indentLevel--;
-                    }
-                }
-                
-                sceneToSingleSprites[targetScene] = EditorGUILayout.Foldout(sceneToSingleSprites[targetScene], "Sprites without Atlas");
-
-                if (sceneToSingleSprites[targetScene])
-                {
-                    EditorGUI.indentLevel++;
-                    foreach (Sprite sprite in AtlasAuditorResult.SceneToSingleSprites[targetScene])
-                    {
-                        EditorGUILayout.ObjectField(sprite.name, sprite, typeof(Object), false);
-                    }
-                    EditorGUI.indentLevel--;
-                }
-                EditorGUI.indentLevel--;
-            }
-            EditorGUILayout.EndVertical();
-        }
-
-        private void DrawSpriteDetails(Sprite sprite)
-        {
-            if (!AtlasAuditorResult.TryGetSpriteSceneUsages(sprite, out HashSet<SceneAsset> scenes))
-                return;
-
-            if (scenes.Count > 1)
-                EditorGUILayout.LabelField($"Used in multiple scenes: {string.Join(",", scenes)}");
-        }
-
-        private void DrawControls()
-        {
-            EditorGUI.BeginDisabledGroup(!Application.isPlaying);
-            if (!isRecording)
-            {
-                if (GUILayout.Button("Start Detecting"))
-                    StartRecording();
-            }
-            else
-            {
-                if (!Application.isPlaying)
-                    StopRecording();
-
-                if (GUILayout.Button("Stop Detecting"))
-                    StopRecording();
-            }
-
-            EditorGUI.EndDisabledGroup();
-        }
 
         private void StopRecording()
         {

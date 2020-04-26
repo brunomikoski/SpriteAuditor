@@ -6,7 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-- Implement a way to display real screen pixel size of sprite renderer
-- Implement per Atlas display
+- Implement a better way display real screen pixel size of sprite renderer
+- Implement per Atlas display [On it] 
+- Replace FullSerializer with something smaller
+- Test devices builds to make sure its not adding anything to the project.
+- Reload references after code compilation
+- Add option to reset specific Sprite Details data (size for instance)
+- Rename the project to Sprite Auditor
+- Remove old code
+
+
+
+
 
 

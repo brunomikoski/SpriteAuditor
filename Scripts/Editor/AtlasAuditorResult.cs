@@ -23,8 +23,6 @@ namespace BrunoMikoski.AtlasAudior
         private Dictionary<string, Vector3> spriteGUIDToMaximumSize = new Dictionary<string, Vector3>();
         
         
-        private HashSet<SpriteAtlas> knowAtlases = new HashSet<SpriteAtlas>();
-        
         //Caching
         private Dictionary<string, Sprite> spriteGUIDToSpriteCache = new Dictionary<string, Sprite>();
         private Dictionary<string, SceneAsset> sceneGUIDToSceneAssetCache = new Dictionary<string, SceneAsset>();
@@ -37,30 +35,28 @@ namespace BrunoMikoski.AtlasAudior
         private Dictionary<SceneAsset, HashSet<Sprite>> sceneToSingleSprites = new Dictionary<SceneAsset, HashSet<Sprite>>();
         public Dictionary<SceneAsset, HashSet<Sprite>> SceneToSingleSprites => sceneToSingleSprites;
         
-        private Dictionary<SpriteAtlas, HashSet<Sprite>> noSceneAtlasToSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
-        public Dictionary<SpriteAtlas, HashSet<Sprite>> NoSceneAtlasToSprites => noSceneAtlasToSprites;
-
-        public HashSet<Sprite> NoSceneSingleSprites => noSceneSingleSprites;
-        private HashSet<Sprite> noSceneSingleSprites = new HashSet<Sprite>();
-        
         private Dictionary<Sprite, HashSet<SceneAsset>> spriteToScenes = new Dictionary<Sprite, HashSet<SceneAsset>>();
         public Dictionary<Sprite, HashSet<SceneAsset>> SpriteToScenes => spriteToScenes;
 
-        private Dictionary<SpriteAtlas, List<Sprite>> atlasToSprites = new Dictionary<SpriteAtlas, List<Sprite>>();
-        public Dictionary<SpriteAtlas, List<Sprite>> AtlasToSprites => atlasToSprites;
+        private Dictionary<SpriteAtlas, List<Sprite>> atlasToAllSprites = new Dictionary<SpriteAtlas, List<Sprite>>();
+        public Dictionary<SpriteAtlas, List<Sprite>> AtlasToAllSprites => atlasToAllSprites;
 
         private Dictionary<Sprite, int> spriteToUseCount = new Dictionary<Sprite, int>();
         private Dictionary<Sprite, HashSet<string>> spriteToUseTransformPath = new Dictionary<Sprite, HashSet<string>>();
         public Dictionary<Sprite, HashSet<string>> SpriteToUseTransformPath => spriteToUseTransformPath;
         private Dictionary<Sprite, Vector3> spriteToMaximumSize = new Dictionary<Sprite, Vector3>();
 
+        
+        private Dictionary<SpriteAtlas, HashSet<Sprite>> atlasToUsedSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
+        private Dictionary<SpriteAtlas, HashSet<Sprite>> atlasToNotUsedSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
+        private HashSet<SpriteAtlas> notUsedAtlases = new HashSet<SpriteAtlas>();
 
         private bool isReferencesDirty;
         
         private bool isDataDirty;
 
         private Camera cachedCamera;
-        private Camera camera
+        private Camera Camera
         {
             get
             {
@@ -115,7 +111,6 @@ namespace BrunoMikoski.AtlasAudior
                     
                     Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
 
-                   
                     if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
                         spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
                 }
@@ -124,29 +119,13 @@ namespace BrunoMikoski.AtlasAudior
                     SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
                     if (spriteRenderer != null)
                     {
-                        Vector3 finalSize = spriteRenderer.GetPixelSize(Camera.main);
+                        Vector3 finalSize = spriteRenderer.GetPixelSize(Camera);
                         
                         if (finalSize.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
                             spriteGUIDToMaximumSize[spriteGUID] = finalSize;
-                        
-                        // Vector2 spriteSize = targetSprite.rect.size;
-                        // Vector2 localSpriteSize = spriteSize / targetSprite.pixelsPerUnit;
-                        // Vector3 worldSize = localSpriteSize;
-                        // worldSize.x *= gameObject.transform.lossyScale.x;
-                        // worldSize.y *= gameObject.transform.lossyScale.y;
-                        //
-                        // Vector3 screenSize = 0.5f * worldSize / camera.orthographicSize;
-                        // screenSize.y *= camera.aspect;
-                        //
-                        // Vector3 sizeInPixels = new Vector3(screenSize.x * camera.pixelWidth, screenSize.y * camera.pixelHeight, 0) * 0.5f;
-                        //
-
                     }
                 }
             }
-            
-           
-            
 
             if (string.IsNullOrEmpty(sceneGUID))
             {
@@ -172,7 +151,6 @@ namespace BrunoMikoski.AtlasAudior
             sceneToSpriteAtlasToSprites.Clear();
             sceneToSingleSprites.Clear();
             spriteToScenes.Clear();
-            noSceneAtlasToSprites.Clear();
             spriteToUseCount.Clear();
             spriteToUseTransformPath.Clear();
             spriteToMaximumSize.Clear();
@@ -206,6 +184,11 @@ namespace BrunoMikoski.AtlasAudior
                             sceneToSpriteAtlasToSprites[scene].Add(targetAtlas, new HashSet<Sprite>());
                         
                         sceneToSpriteAtlasToSprites[scene][targetAtlas].Add(sprite);
+
+                        if (!atlasToUsedSprites.ContainsKey(targetAtlas))
+                            atlasToUsedSprites.Add(targetAtlas, new HashSet<Sprite>());
+
+                        atlasToUsedSprites[targetAtlas].Add(sprite);
                     }
                     else
                     {
@@ -213,25 +196,6 @@ namespace BrunoMikoski.AtlasAudior
                     }
                 }
             }
-
-            foreach (string noSceneSpriteGUID in noSceneSprites)
-            {
-                if (!TryGetSpriteFromCache(noSceneSpriteGUID, out var sprite)) 
-                    continue;
-
-                if (TryGetAtlasForSprite(sprite, out SpriteAtlas targetAtlas))
-                {
-                    if(!noSceneAtlasToSprites.ContainsKey(targetAtlas))
-                        noSceneAtlasToSprites.Add(targetAtlas, new HashSet<Sprite>());
-
-                    noSceneAtlasToSprites[targetAtlas].Add(sprite);
-                }
-                else
-                {
-                    noSceneSingleSprites.Add(sprite);
-                }
-            }
-
             
             foreach (var spriteGUIDToInstanceToCount in spriteGUIDToInstanceIDToUseCount)
             {
@@ -269,6 +233,30 @@ namespace BrunoMikoski.AtlasAudior
                 spriteToMaximumSize.Add(sprite, spriteGUIDtoMaximumSize.Value);
             }
             
+            
+            foreach (var spritesByAtlas in atlasToAllSprites)
+            {
+                if (atlasToUsedSprites.ContainsKey(spritesByAtlas.Key))
+                {
+                    foreach (Sprite sprite in spritesByAtlas.Value)
+                    {
+                        if (!atlasToUsedSprites[spritesByAtlas.Key].Contains(sprite))
+                        {
+                            if(!atlasToNotUsedSprites.ContainsKey(spritesByAtlas.Key))
+                                atlasToNotUsedSprites.Add(spritesByAtlas.Key, new HashSet<Sprite>());
+
+                            atlasToNotUsedSprites[spritesByAtlas.Key].Add(sprite);
+                        }
+                    }
+                }
+                else
+                {
+                    notUsedAtlases.Add(spritesByAtlas.Key);
+                }
+            }
+            
+            
+            
             isReferencesDirty = false;
         }
 
@@ -304,7 +292,7 @@ namespace BrunoMikoski.AtlasAudior
 
         private bool TryGetAtlasForSprite(Sprite targetSprite, out SpriteAtlas resultSpriteAtlas)
         {
-           foreach (var atlasToSprite in atlasToSprites)
+           foreach (var atlasToSprite in atlasToAllSprites)
            {
                for (int i = 0; i < atlasToSprite.Value.Count; i++)
                {
@@ -322,26 +310,23 @@ namespace BrunoMikoski.AtlasAudior
 
         private void CacheKnowAtlases()
         {
-            if (knowAtlases != null)
+            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
+
+            if (atlasGUIDs.Length == atlasToAllSprites.Count)
                 return;
-
-            List<SpriteAtlas> tempAtlas = new List<SpriteAtlas>();
-            string[] spriteGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
-
-            for (int i = 0; i < spriteGUIDs.Length; i++)
+            
+            atlasToAllSprites.Clear();
+            
+            for (int i = 0; i < atlasGUIDs.Length; i++)
             {
                 SpriteAtlas atlas =
-                    AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(spriteGUIDs[i]));
+                    AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
 
                 if (atlas.isVariant)
                     continue;
                 
-                atlasToSprites.Add(atlas, atlas.GetAllSprites());
-                
-                tempAtlas.Add(atlas);
+                atlasToAllSprites.Add(atlas, atlas.GetAllSprites());
             }
-            
-            knowAtlases = new HashSet<SpriteAtlas>(tempAtlas);
         }
 
         public bool TryGetSpriteSceneUsages(Sprite sprite, out HashSet<SceneAsset> sceneAssets)
