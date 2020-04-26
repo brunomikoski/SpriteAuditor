@@ -1,0 +1,19 @@
+{
+  "name": "com.brunomikoski.atlasauditor",
+  "displayName": "Atlas Auditor",
+  "version": "0.0.1",
+  "unity": "2018.4",
+  "description": "Visualizer for sprites usage / atlas ",
+  "keywords": [
+    "sprite",
+    "optimization",
+    "bundlezie"
+  ],
+  "category": "editor extensions",
+  "homepage": "https://github.com/badawe/AtlasAuditor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/badawe/AtlasAuditor.git"
+  },
+  "bugs": "https://github.com/badawe/AtlasAuditor/issues"
+}
