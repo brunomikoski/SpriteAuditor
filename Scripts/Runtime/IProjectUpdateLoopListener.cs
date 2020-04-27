@@ -1,4 +1,4 @@
-﻿namespace BrunoMikoski.AtlasAudior
+﻿namespace BrunoMikoski.SpriteAuditor
 {
     public interface IProjectUpdateLoopListener
     {

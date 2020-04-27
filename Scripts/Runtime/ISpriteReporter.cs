@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
     public interface ISpriteReporter
     {

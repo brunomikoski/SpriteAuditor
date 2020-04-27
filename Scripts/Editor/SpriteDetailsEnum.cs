@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
     [Flags]
     internal enum SpriteDetails

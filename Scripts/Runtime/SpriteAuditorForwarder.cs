@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
-    public class AtlasAuditorForwarder : MonoBehaviour
+    public class SpriteAuditorForwarder : MonoBehaviour
     {
         private IProjectUpdateLoopListener listener;
 

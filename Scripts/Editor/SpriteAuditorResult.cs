@@ -5,10 +5,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
     [Serializable]
-    public class AtlasAuditorResult 
+    public class SpriteAuditorResult 
     {
         [SerializeField]
         private Dictionary<string, HashSet<string>> sceneToSprites = new Dictionary<string, HashSet<string>>();
@@ -115,7 +115,7 @@ namespace BrunoMikoski.AtlasAudior
                     RectTransform canvasRectTransform = (RectTransform) rectTransform.GetComponentInParent<Canvas>().transform;
                     
                     Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
-
+                    
                     if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
                         spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
                 }

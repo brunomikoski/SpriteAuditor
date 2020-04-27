@@ -1,6 +1,6 @@
 ﻿using FullSerializer;
 
-namespace BrunoMikoski.AtlasAudior.Serialization
+namespace BrunoMikoski.SpriteAuditor.Serialization
 {
     public static class JsonWrapper
     {

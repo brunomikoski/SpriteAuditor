@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using BrunoMikoski.AtlasAudior.Serialization;
+using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
     public static class AdditionalSpriteProvidersProcessor
     {

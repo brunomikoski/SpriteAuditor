@@ -1,8 +1,10 @@
 {
-    "name": "BrunoMikoski.AtlasAuditor",
+    "name": "BrunoMikoski.SpriteAuditor.FullSerializer",
     "references": [],
     "optionalUnityReferences": [],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
