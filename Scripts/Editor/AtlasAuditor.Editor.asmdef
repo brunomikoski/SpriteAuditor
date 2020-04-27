@@ -1,0 +1,17 @@
+{
+    "name": "BrunoMikoski.AtlasAuditor.Editor",
+    "references": [
+        "BrunoMikoski.AtlasAuditor",
+        "AtlasAuditor.FullSerializer"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
