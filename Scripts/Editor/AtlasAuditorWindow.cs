@@ -16,10 +16,7 @@ namespace BrunoMikoski.AtlasAudior
         private const string ATLAS_VIEW_KEY = "ATLAS_VIEW_KEY";
         private const string SCENE_VIEW_KEY = "SCENE_VIEW_KEY";
 
-
-        
         private bool isRecording;
-
         
         private AtlasAuditorSpriteDetector atlasAuditorSpriteDetector = new AtlasAuditorSpriteDetector();
         
@@ -157,7 +154,7 @@ namespace BrunoMikoski.AtlasAudior
 
             if (AtlasAuditorResult.AtlasToUsedSprites.Count > 0)
             {
-                if (DrawStringFoldout("In Use Atlas", ATLAS_VIEW_KEY))
+                if (DrawStringFoldout("Used Atlases", ATLAS_VIEW_KEY))
                 {
                     EditorGUI.indentLevel++;
                     foreach (var atlasToUsedSprites in AtlasAuditorResult.AtlasToUsedSprites)
