@@ -5,10 +5,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
     [Serializable]
-    public class AtlasAuditorResult 
+    public class SpriteAuditorResult 
     {
         [SerializeField]
         private Dictionary<string, HashSet<string>> sceneToSprites = new Dictionary<string, HashSet<string>>();

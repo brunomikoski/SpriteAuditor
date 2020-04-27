@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
-    public class AtlasAuditorSpriteDetector : IProjectUpdateLoopListener
+    public class SpriteFinder : IProjectUpdateLoopListener
     {
-        private AtlasAuditorResult result;
+        private SpriteAuditorResult result;
 
-        public void SetResult(AtlasAuditorResult targetResult)
+        public void SetResult(SpriteAuditorResult targetResult)
         {
             result = targetResult;
         }

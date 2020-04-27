@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using BrunoMikoski.AtlasAudior.Serialization;
+using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace BrunoMikoski.AtlasAudior
+namespace BrunoMikoski.SpriteAuditor
 {
-    public class AtlasAuditorWindow : EditorWindow
+    public class SpriteAuditorWindow : EditorWindow
     {
         private const string ATLAS_AUDITOR_STORAGE_KEY = "ATLAS_AUDITOR_STORAGE_KEY";
         private static string[] VISUALIZATION_NAMES = {"Scene View", "Atlas View"};
@@ -18,17 +18,17 @@ namespace BrunoMikoski.AtlasAudior
 
         private bool isRecording;
         
-        private AtlasAuditorSpriteDetector atlasAuditorSpriteDetector = new AtlasAuditorSpriteDetector();
+        private SpriteFinder spriteFinder = new SpriteFinder();
         
         [NonSerialized]
-        private AtlasAuditorResult cachedAtlasAuditorResult;
-        private AtlasAuditorResult AtlasAuditorResult
+        private SpriteAuditorResult cachedSpriteAuditorResult;
+        private SpriteAuditorResult SpriteAuditorResult
         {
             get
             {
-                if (cachedAtlasAuditorResult == null)
+                if (cachedSpriteAuditorResult == null)
                     LoadOrCreateAtlasResult();
-                return cachedAtlasAuditorResult;
+                return cachedSpriteAuditorResult;
             }
         }
 
@@ -42,14 +42,14 @@ namespace BrunoMikoski.AtlasAudior
 
         private bool recordOnPlay = true;
         private VisualizationType visualizationType = VisualizationType.Scene;
-        private AtlasAuditorForwarder atlasAuditorForwarder;
+        private SpriteAuditorForwarder spriteAuditorForwarder;
         private bool showSpritesWithoutAtlas;
         private float spriteUsageSizeThreshold = 0.25f;
 
         [MenuItem("Tools/Sprite Auditor")]
         public static void OpenWindow()
         {
-            AtlasAuditorWindow window = GetWindow<AtlasAuditorWindow>("Atlas Auditor");
+            SpriteAuditorWindow window = GetWindow<SpriteAuditorWindow>("Atlas Auditor");
             window.Show();
         }
 
@@ -74,7 +74,7 @@ namespace BrunoMikoski.AtlasAudior
             {
                 StopRecording();
             }
-            AtlasAuditorResult?.SetReferencesDirty(true);
+            SpriteAuditorResult?.SetReferencesDirty(true);
         }
 
         private void LoadOrCreateAtlasResult()
@@ -82,29 +82,29 @@ namespace BrunoMikoski.AtlasAudior
             string storedJson = EditorPrefs.GetString(ATLAS_AUDITOR_STORAGE_KEY, string.Empty);
             if (!string.IsNullOrEmpty(storedJson))
             {
-                cachedAtlasAuditorResult = new AtlasAuditorResult();
-                JsonWrapper.FromJson(storedJson, ref cachedAtlasAuditorResult);
+                cachedSpriteAuditorResult = new SpriteAuditorResult();
+                JsonWrapper.FromJson(storedJson, ref cachedSpriteAuditorResult);
             }
             else
             {
-                cachedAtlasAuditorResult = new AtlasAuditorResult();
+                cachedSpriteAuditorResult = new SpriteAuditorResult();
             }
         }
 
         private void SaveAtlasResult()
         {
-            if (!AtlasAuditorResult.IsDataDirty)
+            if (!SpriteAuditorResult.IsDataDirty)
                 return;
                 
-            string json = JsonWrapper.ToJson(AtlasAuditorResult);
+            string json = JsonWrapper.ToJson(SpriteAuditorResult);
             EditorPrefs.SetString(ATLAS_AUDITOR_STORAGE_KEY, json);
-            AtlasAuditorResult.SetDataDirty(false);
+            SpriteAuditorResult.SetDataDirty(false);
         }
         
         private void ClearCache()
         {
             EditorPrefs.DeleteKey(ATLAS_AUDITOR_STORAGE_KEY);
-            cachedAtlasAuditorResult = new AtlasAuditorResult();
+            cachedSpriteAuditorResult = new SpriteAuditorResult();
         }
         
         private void OnGUI()
@@ -119,10 +119,10 @@ namespace BrunoMikoski.AtlasAudior
 
         private void DrawResults()
         {
-            if (AtlasAuditorResult == null)
+            if (SpriteAuditorResult == null)
                 return;
 
-            AtlasAuditorResult.AssignReferences();
+            SpriteAuditorResult.AssignReferences();
 
             EditorGUILayout.BeginVertical("Box");
             EditorGUILayout.LabelField("Results", EditorStyles.toolbarDropDown);
@@ -152,12 +152,12 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.BeginVertical("Box");
 
-            if (AtlasAuditorResult.AtlasToUsedSprites.Count > 0)
+            if (SpriteAuditorResult.AtlasToUsedSprites.Count > 0)
             {
                 if (DrawStringFoldout("Used Atlases", ATLAS_VIEW_KEY))
                 {
                     EditorGUI.indentLevel++;
-                    foreach (var atlasToUsedSprites in AtlasAuditorResult.AtlasToUsedSprites)
+                    foreach (var atlasToUsedSprites in SpriteAuditorResult.AtlasToUsedSprites)
                     {
                         EditorGUILayout.BeginVertical("Box");
 
@@ -183,14 +183,14 @@ namespace BrunoMikoski.AtlasAudior
                                 EditorGUILayout.EndVertical();
                             }
 
-                            if (AtlasAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key].Count > 0)
+                            if (SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key].Count > 0)
                             {
                                 EditorGUI.indentLevel++;
                                 EditorGUILayout.BeginVertical("Box");
                                 if (DrawStringFoldout("Not used sprites", $"{ATLAS_VIEW_KEY}_NOT_USED_SPRITES"))
                                 {
                                     EditorGUI.indentLevel++;
-                                    foreach (Sprite sprite in AtlasAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
+                                    foreach (Sprite sprite in SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
                                     {
                                         DrawSpriteField(sprite, null, SpriteDetails.None,
                                             $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}");
@@ -224,12 +224,12 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.BeginVertical("Box");
             
-            foreach (var sceneGUIDtoSceneAsset in AtlasAuditorResult.SceneGUIDToSceneAssetCache)
+            foreach (var sceneGUIDtoSceneAsset in SpriteAuditorResult.SceneGUIDToSceneAssetCache)
             {
                 SceneAsset sceneAsset = sceneGUIDtoSceneAsset.Value;
                 EditorGUILayout.LabelField(sceneAsset.name, EditorStyles.toolbarDropDown);
 
-                if (AtlasAuditorResult.SceneToSingleSprites[sceneAsset].Count > 0)
+                if (SpriteAuditorResult.SceneToSingleSprites[sceneAsset].Count > 0)
                 {
                     EditorGUILayout.BeginVertical("Box");
                     showSpritesWithoutAtlas = EditorGUILayout.Foldout(showSpritesWithoutAtlas, "Sprites without atlas",
@@ -237,7 +237,7 @@ namespace BrunoMikoski.AtlasAudior
                     if (showSpritesWithoutAtlas)
                     {
                         EditorGUI.indentLevel++;
-                        foreach (Sprite sprite in AtlasAuditorResult.SceneToSingleSprites[sceneAsset])
+                        foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
                         {
                             DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, sceneAsset.name);
                         }
@@ -247,14 +247,14 @@ namespace BrunoMikoski.AtlasAudior
                     EditorGUILayout.EndVertical();
                 }
 
-                foreach (var valuePair in AtlasAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset])
+                foreach (var valuePair in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset])
                 {
                     EditorGUILayout.BeginVertical("Box");
 
                     if (DrawObjectFoldout(valuePair.Key, $"{SCENE_VIEW_KEY}_{valuePair.Key}"))
                     {
                         EditorGUI.indentLevel++;
-                        foreach (Sprite sprite in AtlasAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][valuePair.Key])
+                        foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][valuePair.Key])
                         {
                             DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, valuePair.Key.name);
                         }
@@ -322,7 +322,7 @@ namespace BrunoMikoski.AtlasAudior
             EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            foreach (var scene in AtlasAuditorResult.SpriteToScenes[sprite])
+            foreach (var scene in SpriteAuditorResult.SpriteToScenes[sprite])
             {
                 EditorGUILayout.ObjectField(scene, typeof(SceneAsset), false);
             }
@@ -335,7 +335,7 @@ namespace BrunoMikoski.AtlasAudior
             EditorGUILayout.LabelField("Usages", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            foreach (string usePath in AtlasAuditorResult.SpriteToUseTransformPath[sprite])
+            foreach (string usePath in SpriteAuditorResult.SpriteToUseTransformPath[sprite])
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(usePath);
@@ -354,7 +354,7 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.LabelField($"Total Usages Found", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            EditorGUILayout.LabelField($"{AtlasAuditorResult.GetSpriteUseCount(sprite)}");
+            EditorGUILayout.LabelField($"{SpriteAuditorResult.GetSpriteUseCount(sprite)}");
             EditorGUI.indentLevel--;
         }
 
@@ -362,7 +362,7 @@ namespace BrunoMikoski.AtlasAudior
         {
             EditorGUILayout.LabelField("Max Use Size", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            Vector3 spriteMaxUseSize = AtlasAuditorResult.GetSpriteMaxUseSize(sprite);
+            Vector3 spriteMaxUseSize = SpriteAuditorResult.GetSpriteMaxUseSize(sprite);
             EditorGUILayout.LabelField(
                 $"Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
 
@@ -425,7 +425,7 @@ namespace BrunoMikoski.AtlasAudior
             EditorGUI.EndDisabledGroup();
 
             if (GUILayout.Button("Refresh References", EditorStyles.toolbarButton))
-                AtlasAuditorResult.SetReferencesDirty(true);
+                SpriteAuditorResult.SetReferencesDirty(true);
 
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
@@ -438,8 +438,8 @@ namespace BrunoMikoski.AtlasAudior
             if (!isRecording)
                 return;
             
-            if (atlasAuditorForwarder != null)
-                Destroy(atlasAuditorForwarder.gameObject);
+            if (spriteAuditorForwarder != null)
+                Destroy(spriteAuditorForwarder.gameObject);
             
             isRecording = false;
             SaveAtlasResult();
@@ -452,11 +452,11 @@ namespace BrunoMikoski.AtlasAudior
             
             isRecording = true;
 
-            atlasAuditorSpriteDetector.SetResult(AtlasAuditorResult);
+            spriteFinder.SetResult(SpriteAuditorResult);
             GameObject atlasDetectingGameObject = new GameObject("Atlas Detecting");
             
-            atlasAuditorForwarder = atlasDetectingGameObject.AddComponent<AtlasAuditorForwarder>();
-            atlasAuditorForwarder.SetListener(atlasAuditorSpriteDetector);
+            spriteAuditorForwarder = atlasDetectingGameObject.AddComponent<SpriteAuditorForwarder>();
+            spriteAuditorForwarder.SetListener(spriteFinder);
             DontDestroyOnLoad(atlasDetectingGameObject.gameObject);
         }
     }
