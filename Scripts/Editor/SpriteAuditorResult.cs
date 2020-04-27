@@ -115,7 +115,7 @@ namespace BrunoMikoski.SpriteAuditor
                     RectTransform canvasRectTransform = (RectTransform) rectTransform.GetComponentInParent<Canvas>().transform;
                     
                     Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
-
+                    
                     if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
                         spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
                 }

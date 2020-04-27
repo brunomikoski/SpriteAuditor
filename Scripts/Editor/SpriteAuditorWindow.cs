@@ -131,7 +131,8 @@ namespace BrunoMikoski.SpriteAuditor
             visualizationType =
                 (VisualizationType) GUILayout.SelectionGrid((int) visualizationType, VISUALIZATION_NAMES, 2,
                     EditorStyles.radioButton);
-
+            
+            EditorGUILayout.EndVertical();
 
             switch (visualizationType)
             {
@@ -145,15 +146,15 @@ namespace BrunoMikoski.SpriteAuditor
                     throw new ArgumentOutOfRangeException();
             }
             
-            EditorGUILayout.EndVertical();
         }
 
         private void DrawResultsByAtlas()
         {
-            EditorGUILayout.BeginVertical("Box");
 
             if (SpriteAuditorResult.AtlasToUsedSprites.Count > 0)
             {
+                EditorGUILayout.BeginVertical("Box");
+
                 if (DrawStringFoldout("Used Atlases", ATLAS_VIEW_KEY))
                 {
                     EditorGUI.indentLevel++;
@@ -205,9 +206,8 @@ namespace BrunoMikoski.SpriteAuditor
                     }
                     EditorGUI.indentLevel--;
                 }
+                EditorGUILayout.EndVertical();
             }
-            
-            EditorGUILayout.EndVertical();
         }
 
         private bool DrawStringFoldout(string label, string foldoutKey)
@@ -227,43 +227,52 @@ namespace BrunoMikoski.SpriteAuditor
             foreach (var sceneGUIDtoSceneAsset in SpriteAuditorResult.SceneGUIDToSceneAssetCache)
             {
                 SceneAsset sceneAsset = sceneGUIDtoSceneAsset.Value;
-                EditorGUILayout.LabelField(sceneAsset.name, EditorStyles.toolbarDropDown);
 
-                if (SpriteAuditorResult.SceneToSingleSprites[sceneAsset].Count > 0)
+                EditorGUILayout.BeginVertical("Box");
+                if (DrawObjectFoldout(sceneAsset, sceneAsset.name))
                 {
-                    EditorGUILayout.BeginVertical("Box");
-                    showSpritesWithoutAtlas = EditorGUILayout.Foldout(showSpritesWithoutAtlas, "Sprites without atlas",
-                        EditorStyles.foldout);
-                    if (showSpritesWithoutAtlas)
+                    EditorGUI.indentLevel++;
+                    if (SpriteAuditorResult.SceneToSingleSprites[sceneAsset].Count > 0)
                     {
-                        EditorGUI.indentLevel++;
-                        foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
+                        EditorGUILayout.BeginVertical("Box");
+                        showSpritesWithoutAtlas = EditorGUILayout.Foldout(showSpritesWithoutAtlas,
+                            "Sprites without atlas",
+                            EditorStyles.foldout);
+                        if (showSpritesWithoutAtlas)
                         {
-                            DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, sceneAsset.name);
+                            EditorGUI.indentLevel++;
+                            foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
+                            {
+                                DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, sceneAsset.name);
+                            }
+
+                            EditorGUI.indentLevel--;
                         }
-                        EditorGUI.indentLevel--;
 
+                        EditorGUILayout.EndVertical();
                     }
-                    EditorGUILayout.EndVertical();
-                }
 
-                foreach (var valuePair in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset])
-                {
-                    EditorGUILayout.BeginVertical("Box");
-
-                    if (DrawObjectFoldout(valuePair.Key, $"{SCENE_VIEW_KEY}_{valuePair.Key}"))
+                    foreach (var valuePair in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset])
                     {
-                        EditorGUI.indentLevel++;
-                        foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][valuePair.Key])
-                        {
-                            DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, valuePair.Key.name);
-                        }
-                        EditorGUI.indentLevel--;
-                    }
-                    
-                    EditorGUILayout.EndVertical();
+                        EditorGUILayout.BeginVertical("Box");
 
+                        if (DrawObjectFoldout(valuePair.Key, $"{SCENE_VIEW_KEY}_{valuePair.Key}"))
+                        {
+                            EditorGUI.indentLevel++;
+                            foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][
+                                valuePair.Key])
+                            {
+                                DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, valuePair.Key.name);
+                            }
+
+                            EditorGUI.indentLevel--;
+                        }
+
+                        EditorGUILayout.EndVertical();
+                    }
+                    EditorGUI.indentLevel--;
                 }
+                EditorGUILayout.EndVertical();
             }
             EditorGUILayout.EndVertical();
         }
@@ -453,11 +462,11 @@ namespace BrunoMikoski.SpriteAuditor
             isRecording = true;
 
             spriteFinder.SetResult(SpriteAuditorResult);
-            GameObject atlasDetectingGameObject = new GameObject("Atlas Detecting");
+            GameObject spriteAuditorGameObject = new GameObject("Sprite Auditor Forwarder");
             
-            spriteAuditorForwarder = atlasDetectingGameObject.AddComponent<SpriteAuditorForwarder>();
+            spriteAuditorForwarder = spriteAuditorGameObject.AddComponent<SpriteAuditorForwarder>();
             spriteAuditorForwarder.SetListener(spriteFinder);
-            DontDestroyOnLoad(atlasDetectingGameObject.gameObject);
+            DontDestroyOnLoad(spriteAuditorForwarder.gameObject);
         }
     }
 }

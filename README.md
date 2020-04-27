@@ -39,5 +39,3 @@ You can also install via git URL by adding this entry in your **manifest.json**
 ```
 from Window->Package Manager, click on the + sign and Add from git: https://github.com/badawe/SpriteAuditor.git
 ```
-
-![inspector](/Documentation~/general-usage.gif) ![Manager](/Documentation~/add-new-from-manager.gif) ![properties](/Documentation~/properties-modification.gif)
