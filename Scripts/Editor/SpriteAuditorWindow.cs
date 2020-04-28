@@ -383,14 +383,19 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawSpriteSizeDetails(Sprite sprite, float atlasScale = 1)
         {
-            EditorGUILayout.LabelField("Max Use Size", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Size", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
             Vector3 spriteMaxUseSize = SpriteAuditorResult.GetSpriteMaxUseSize(sprite);
             EditorGUILayout.LabelField(
-                $"Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
+                $"Max Use Size Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
 
             Vector2 spriteSize = sprite.rect.size;
             spriteSize = spriteSize * atlasScale;
+            
+            EditorGUILayout.LabelField(
+                $"Sprite Size Width: {Mathf.RoundToInt(spriteSize.x)} Height: {Mathf.RoundToInt(spriteSize.y)}");
+
+            
             Vector3 sizeDifference = new Vector3(spriteMaxUseSize.x - spriteSize.x,
                 spriteMaxUseSize.y - spriteSize.y, 0);
 
