@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reload references after code compilation
 - Add option to reset specific Sprite Details data (size for instance)
 - Something is wrong with sprites from the same image size detection
-
+- Implement a way where caching the atlas is something that the user selects to do, when he wants
 
 
 

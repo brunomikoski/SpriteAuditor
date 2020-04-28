@@ -6,8 +6,45 @@ using UnityEditor.U2D;
 
 namespace UnityEngine.U2D
 {
-    public static partial class SpriteAtlasExtensions
+    public static partial class EditorSpriteAtlasExtensions
     {
+        public static float GetVariantScale(this SpriteAtlas spriteAtlas)
+        {
+            SerializedObject serObj = new SerializedObject(spriteAtlas);
+            SerializedProperty iter = serObj.GetIterator();
+            while (iter.Next(true)) 
+            {
+                if (string.Equals("m_EditorData.variantMultiplier", iter.propertyPath, StringComparison.Ordinal))
+                    return iter.floatValue;
+            }
+            return 1.0f;
+        }
+        public static bool TryGetMasterAtlas(this SpriteAtlas spriteAtlas, out SpriteAtlas masterAtlas)
+        {
+            SerializedObject serObj = new SerializedObject(spriteAtlas);
+            SerializedProperty iter = serObj.GetIterator();
+            while (iter.Next(true)) 
+            {
+                if (string.Equals("m_MasterAtlas", iter.propertyPath, StringComparison.Ordinal))
+                {
+                    masterAtlas = iter.objectReferenceValue as SpriteAtlas;
+                    return true;
+                }
+            }
+            masterAtlas = null;
+            return false;
+        }
+        public static bool IsIncludedInBuild(this SpriteAtlas spriteAtlas)
+        {
+            SerializedObject serObj = new SerializedObject(spriteAtlas);
+            SerializedProperty iter = serObj.GetIterator();
+            while (iter.Next(true)) 
+            {
+                if (string.Equals("m_EditorData.bindAsDefault", iter.propertyPath, StringComparison.Ordinal))
+                    return iter.boolValue;
+            }
+            return false;
+        }
         public static List<Sprite> GetAllSprites(this SpriteAtlas spriteAtlas)
         {
             List<Sprite> resultSprites = new List<Sprite>();
@@ -40,7 +77,6 @@ namespace UnityEngine.U2D
                 string spritesGUID = spritesGUIDs[i];
                 string spritePath = AssetDatabase.GUIDToAssetPath(spritesGUID);
                 Uri spriteUri = new Uri(Path.GetFullPath(spritePath));
-
 
                 if (rootFolder != spriteUri && rootFolder.IsBaseOf(spriteUri))
                 {

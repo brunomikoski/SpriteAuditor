@@ -52,13 +52,16 @@ namespace BrunoMikoski.SpriteAuditor
 
         private Dictionary<SpriteAtlas, HashSet<Sprite>> atlasToNotUsedSprites = new Dictionary<SpriteAtlas, HashSet<Sprite>>();
         public Dictionary<SpriteAtlas, HashSet<Sprite>> AtlasToNotUsedSprites => atlasToNotUsedSprites;
+        
+        private Dictionary<SpriteAtlas, float> atlasToScale = new Dictionary<SpriteAtlas, float>();
+        public Dictionary<SpriteAtlas, float> AtlasToScale => atlasToScale;
 
         private HashSet<SpriteAtlas> notUsedAtlases = new HashSet<SpriteAtlas>();
         public HashSet<SpriteAtlas> NotUsedAtlases => notUsedAtlases;
 
         private bool isReferencesDirty;
-        
-        private bool isDataDirty;
+        private bool isSaveDataDirty;
+        public bool IsSaveDataDirty => isSaveDataDirty;
 
         private Camera cachedCamera;
         private Camera Camera
@@ -71,10 +74,10 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        public bool IsDataDirty => isDataDirty;
         
         public void AddSprite(Sprite targetSprite, GameObject gameObject)
         {
+            bool dataChanged = false;
             if (targetSprite == null)
                 return;
 
@@ -95,6 +98,8 @@ namespace BrunoMikoski.SpriteAuditor
             //If is the first time we are seeing this game object sprite combination
             if (!spriteGUIDToInstanceIDToUseCount[spriteGUID].ContainsKey(gameObjectInstanceID))
             {
+                dataChanged = true;
+                
                 //Adding the "unique" usage count
                 spriteGUIDToInstanceIDToUseCount[spriteGUID].Add(gameObjectInstanceID, 0);
                 //Adding the unique path to this game object
@@ -112,12 +117,15 @@ namespace BrunoMikoski.SpriteAuditor
                 
                 if (gameObject.transform is RectTransform rectTransform)
                 {
-                    RectTransform canvasRectTransform = (RectTransform) rectTransform.GetComponentInParent<Canvas>().transform;
+                    Canvas componentInParent = rectTransform.GetComponentInParent<Canvas>();
+                    if (componentInParent != null)
+                    {
+                        RectTransform canvasRectTransform = (RectTransform) componentInParent.transform;
+                        Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
                     
-                    Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
-                    
-                    if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
-                        spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
+                        if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
+                            spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
+                    }
                 }
                 else
                 {
@@ -134,18 +142,23 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (string.IsNullOrEmpty(sceneGUID))
             {
-                noSceneSprites.Add(spriteGUID);   
+                if (noSceneSprites.Add(spriteGUID))
+                    dataChanged = true;
             }
             else
             {
                 if (!sceneToSprites.ContainsKey(sceneGUID))
                     sceneToSprites.Add(sceneGUID, new HashSet<string>());
 
-                sceneToSprites[sceneGUID].Add(spriteGUID);
+                if (sceneToSprites[sceneGUID].Add(spriteGUID))
+                    dataChanged = true;
             }
 
-            isReferencesDirty = true;
-            isDataDirty = true;
+            if (dataChanged)
+            {
+                isReferencesDirty = true;
+                isSaveDataDirty = true;
+            }
         }
 
         public void AssignReferences()
@@ -160,7 +173,6 @@ namespace BrunoMikoski.SpriteAuditor
             spriteToUseTransformPath.Clear();
             spriteToMaximumSize.Clear();
             
-            CacheKnowAtlases();
 
             foreach (var sceneToSprites in sceneToSprites)
             {
@@ -313,24 +325,34 @@ namespace BrunoMikoski.SpriteAuditor
            return false;
         }
 
-        private void CacheKnowAtlases()
+        public void CacheKnowAtlases()
         {
-            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
-
-            if (atlasGUIDs.Length == atlasToAllSprites.Count)
-                return;
-            
             atlasToAllSprites.Clear();
+            atlasToScale.Clear();
+
+            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
             
             for (int i = 0; i < atlasGUIDs.Length; i++)
             {
                 SpriteAtlas atlas =
                     AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
 
-                if (atlas.isVariant)
+                if (!atlas.IsIncludedInBuild())
                     continue;
-                
-                atlasToAllSprites.Add(atlas, atlas.GetAllSprites());
+
+                if (atlas.isVariant)
+                {
+                    if (atlas.TryGetMasterAtlas(out SpriteAtlas masterAtlas))
+                    {
+                        atlasToScale.Add(atlas, atlas.GetVariantScale());
+                        atlasToAllSprites.Add(atlas, masterAtlas.GetAllSprites());
+                    }
+                }
+                else
+                {
+                    atlasToAllSprites.Add(atlas, atlas.GetAllSprites());
+                    atlasToScale.Add(atlas, 1.0f);
+                }
             }
         }
 
@@ -341,7 +363,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void SetDataDirty(bool isDirty)
         {
-            isDataDirty = isDirty;
+            isSaveDataDirty = isDirty;
         }
 
         public void SetReferencesDirty(bool isDirty)
@@ -365,14 +387,15 @@ namespace BrunoMikoski.SpriteAuditor
             return Vector3.zero;
         }
 
-        public void ClearSpriteToMaxSize(Sprite targetSprite)
+        public void ClearAllSpritesKnowSizes()
         {
-            string assetPath = AssetDatabase.GetAssetPath(targetSprite);
-
-            string spriteGUID = AssetDatabase.AssetPathToGUID(assetPath);
-
-            spriteGUIDToMaximumSize.Remove(spriteGUID);
-            isDataDirty = true;
+            spriteGUIDToMaximumSize.Clear();
+            isSaveDataDirty = true;
+        }
+        
+        public void ClearAtlasesCache()
+        {
+            CacheKnowAtlases();
         }
     }
 }

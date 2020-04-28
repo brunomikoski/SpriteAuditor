@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.U2D;
 using UnityEngine;
+using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
@@ -68,13 +70,20 @@ namespace BrunoMikoski.SpriteAuditor
             if (EditorApplication.isPlaying)
             {
                 if (recordOnPlay)
+                {
+                    SpriteAuditorResult.CacheKnowAtlases();
                     StartRecording();
+                }
             }
             else
             {
-                StopRecording();
+                if (isRecording)
+                {
+                    StopRecording();
+                    SpriteAuditorResult.CacheKnowAtlases();
+                    SpriteAuditorResult.AssignReferences();
+                }
             }
-            SpriteAuditorResult?.SetReferencesDirty(true);
         }
 
         private void LoadOrCreateAtlasResult()
@@ -93,7 +102,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void SaveAtlasResult()
         {
-            if (!SpriteAuditorResult.IsDataDirty)
+            if (!SpriteAuditorResult.IsSaveDataDirty)
                 return;
                 
             string json = JsonWrapper.ToJson(SpriteAuditorResult);
@@ -175,7 +184,7 @@ namespace BrunoMikoski.SpriteAuditor
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in atlasToUsedSprites.Value)
                                     {
-                                        DrawSpriteField(sprite, null, SpriteDetails.All,
+                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.All,
                                             $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
@@ -193,7 +202,7 @@ namespace BrunoMikoski.SpriteAuditor
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
                                     {
-                                        DrawSpriteField(sprite, null, SpriteDetails.None,
+                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.None,
                                             $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
@@ -243,7 +252,7 @@ namespace BrunoMikoski.SpriteAuditor
                             EditorGUI.indentLevel++;
                             foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
                             {
-                                DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, sceneAsset.name);
+                                DrawSpriteField(sprite, null, sceneAsset, SpriteDetails.All, sceneAsset.name);
                             }
 
                             EditorGUI.indentLevel--;
@@ -262,7 +271,7 @@ namespace BrunoMikoski.SpriteAuditor
                             foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][
                                 valuePair.Key])
                             {
-                                DrawSpriteField(sprite, sceneAsset, SpriteDetails.All, valuePair.Key.name);
+                                DrawSpriteField(sprite, valuePair.Key, sceneAsset, SpriteDetails.All, valuePair.Key.name);
                             }
 
                             EditorGUI.indentLevel--;
@@ -301,7 +310,7 @@ namespace BrunoMikoski.SpriteAuditor
             return keyToFoldout[foldoutKey];
         }
 
-        private void DrawSpriteField(Sprite sprite, SceneAsset sceneAsset = null,
+        private void DrawSpriteField(Sprite sprite, SpriteAtlas atlas = null, SceneAsset sceneAsset = null,
             SpriteDetails details = SpriteDetails.All, string foldoutKey = "")
         {
             EditorGUILayout.BeginVertical("Box");
@@ -314,7 +323,12 @@ namespace BrunoMikoski.SpriteAuditor
                     DrawSpriteUsageCount(sprite);
 
                 if (details.HasFlag(SpriteDetails.SizeDetails))
-                    DrawSpriteSizeDetails(sprite);    
+                {
+                    float scale = 1.0f;
+                    if (atlas != null)
+                        scale = SpriteAuditorResult.AtlasToScale[atlas];
+                    DrawSpriteSizeDetails(sprite, scale);
+                }    
 
                 if (details.HasFlag(SpriteDetails.ReferencesPath))
                     DrawSpriteReferencesPath(sceneAsset, sprite);
@@ -367,7 +381,7 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUI.indentLevel--;
         }
 
-        private void DrawSpriteSizeDetails(Sprite sprite)
+        private void DrawSpriteSizeDetails(Sprite sprite, float atlasScale = 1)
         {
             EditorGUILayout.LabelField("Max Use Size", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
@@ -375,14 +389,16 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.LabelField(
                 $"Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
 
-            Vector3 sizeDifference = new Vector3(spriteMaxUseSize.x - sprite.rect.size.x,
-                spriteMaxUseSize.y - sprite.rect.size.y, 0);
+            Vector2 spriteSize = sprite.rect.size;
+            spriteSize = spriteSize * atlasScale;
+            Vector3 sizeDifference = new Vector3(spriteMaxUseSize.x - spriteSize.x,
+                spriteMaxUseSize.y - spriteSize.y, 0);
 
-            float differenceMagnitude = sizeDifference.magnitude / sprite.rect.size.magnitude;
+            float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
 
             if (Mathf.Abs(differenceMagnitude) > spriteUsageSizeThreshold)
             {
-                if (spriteMaxUseSize.sqrMagnitude > sprite.rect.size.sqrMagnitude)
+                if (spriteMaxUseSize.sqrMagnitude > spriteSize.sqrMagnitude)
                 {
                     EditorGUILayout.HelpBox(
                         $"Sprite used with a size {differenceMagnitude:P} times bigger than imported sprite size," +
@@ -435,8 +451,24 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (GUILayout.Button("Refresh References", EditorStyles.toolbarButton))
                 SpriteAuditorResult.SetReferencesDirty(true);
-
             EditorGUILayout.EndHorizontal();
+
+            
+            EditorGUILayout.LabelField("Caching Tools", EditorStyles.toolbarDropDown);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Refresh Know Atlas", EditorStyles.toolbarButton))
+                SpriteAuditorResult.ClearAtlasesCache();
+            
+            if (GUILayout.Button("Clear Maximum Size References", EditorStyles.toolbarButton))
+                SpriteAuditorResult.ClearAllSpritesKnowSizes();
+
+            if (GUILayout.Button("Pack Atlases", EditorStyles.toolbarButton))
+                SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
+            
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.EndVertical();
             EditorGUI.EndDisabledGroup();
         }
