@@ -1,14 +1,15 @@
-﻿namespace UnityEngine
+﻿
+namespace UnityEngine
 {
-    public static partial class SpriteRendererExtensions
+    public static partial class SpriteMaskExtensions
     {
-        public static Vector2 GetPixelSize(this SpriteRenderer spriteRenderer, Camera camera)
+        public static Vector2 GetPixelSize(this SpriteMask spriteMask, Camera camera)
         {
-            Sprite sprite = spriteRenderer.sprite;
-            Vector2 spriteSize = sprite.rect.size;
+            Sprite sprite = spriteMask.sprite;
+            Vector2 spriteSize = spriteMask.bounds.size;
             Vector2 localSpriteSize = spriteSize / sprite.pixelsPerUnit;
             Vector3 worldSize = localSpriteSize;
-            Vector3 lossyScale = spriteRenderer.transform.lossyScale;
+            Vector3 lossyScale = spriteMask.transform.lossyScale;
             worldSize.x *= lossyScale.x;
             worldSize.y *= lossyScale.y;
  

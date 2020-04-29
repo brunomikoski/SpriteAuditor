@@ -4,6 +4,8 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
@@ -15,8 +17,9 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField]
         private HashSet<string> noSceneSprites = new HashSet<string>();
         
+        
         [SerializeField] 
-        private Dictionary<string, Dictionary<int, int>> spriteGUIDToInstanceIDToUseCount = new Dictionary<string, Dictionary<int, int>>();
+        private Dictionary<string, List<int>> spriteGUIDToInstancesIDs = new Dictionary<string, List<int>>();
         [SerializeField]
         private Dictionary<string, HashSet<string>> spriteGUIDtoUsePath = new Dictionary<string, HashSet<string>>();
         [SerializeField]
@@ -27,7 +30,7 @@ namespace BrunoMikoski.SpriteAuditor
         private Dictionary<string, Sprite> spriteGUIDToSpriteCache = new Dictionary<string, Sprite>();
         private Dictionary<string, SceneAsset> sceneGUIDToSceneAssetCache = new Dictionary<string, SceneAsset>();
         public Dictionary<string, SceneAsset> SceneGUIDToSceneAssetCache => sceneGUIDToSceneAssetCache;
-
+        
 
         private Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<Sprite>>> sceneToSpriteAtlasToSprites = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<Sprite>>>();
         public Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<Sprite>>> SceneToSpriteAtlasToSprites => sceneToSpriteAtlasToSprites;
@@ -41,7 +44,6 @@ namespace BrunoMikoski.SpriteAuditor
         private Dictionary<SpriteAtlas, List<Sprite>> atlasToAllSprites = new Dictionary<SpriteAtlas, List<Sprite>>();
         public Dictionary<SpriteAtlas, List<Sprite>> AtlasToAllSprites => atlasToAllSprites;
 
-        private Dictionary<Sprite, int> spriteToUseCount = new Dictionary<Sprite, int>();
         private Dictionary<Sprite, HashSet<string>> spriteToUseTransformPath = new Dictionary<Sprite, HashSet<string>>();
         public Dictionary<Sprite, HashSet<string>> SpriteToUseTransformPath => spriteToUseTransformPath;
         private Dictionary<Sprite, Vector3> spriteToMaximumSize = new Dictionary<Sprite, Vector3>();
@@ -73,71 +75,45 @@ namespace BrunoMikoski.SpriteAuditor
                 return cachedCamera;
             }
         }
-
         
-        public void AddSprite(Sprite targetSprite, GameObject gameObject)
+        public void AddSprite(Sprite targetSprite, GameObject gameObject, Vector3 spriteUsageSize)
         {
             bool dataChanged = false;
-            if (targetSprite == null)
-                return;
 
             Scene targetScene = gameObject.scene;
 
             string sceneGUID = AssetDatabase.AssetPathToGUID(targetScene.path);
-            string assetPath = AssetDatabase.GetAssetPath(targetSprite);
+            string spriteGUID = targetSprite.GetGUID();
 
-            string spriteGUID = AssetDatabase.AssetPathToGUID(assetPath);
-
-            if (!spriteGUIDToInstanceIDToUseCount.ContainsKey(spriteGUID))
-                spriteGUIDToInstanceIDToUseCount.Add(spriteGUID, new Dictionary<int, int>());
-
-            if (!spriteGUIDtoUsePath.ContainsKey(spriteGUID))
+            if (!spriteGUIDToInstancesIDs.ContainsKey(spriteGUID))
+            {
+                spriteGUIDToInstancesIDs.Add(spriteGUID, new List<int>());
                 spriteGUIDtoUsePath.Add(spriteGUID, new HashSet<string>());
+            }
 
             int gameObjectInstanceID = gameObject.GetInstanceID();
+            
             //If is the first time we are seeing this game object sprite combination
-            if (!spriteGUIDToInstanceIDToUseCount[spriteGUID].ContainsKey(gameObjectInstanceID))
+            if (!spriteGUIDToInstancesIDs[spriteGUID].Contains(gameObjectInstanceID))
             {
                 dataChanged = true;
                 
                 //Adding the "unique" usage count
-                spriteGUIDToInstanceIDToUseCount[spriteGUID].Add(gameObjectInstanceID, 0);
+                spriteGUIDToInstancesIDs[spriteGUID].Add(gameObjectInstanceID);
                 //Adding the unique path to this game object
                 spriteGUIDtoUsePath[spriteGUID].Add(gameObject.transform.GetPath());
-                
-                //Incrementing the usage count
-                int count = spriteGUIDToInstanceIDToUseCount[spriteGUID][gameObjectInstanceID];
-                count++;
-                spriteGUIDToInstanceIDToUseCount[spriteGUID][gameObjectInstanceID] = count;
+            }
 
+            if (!spriteGUIDToMaximumSize.ContainsKey(spriteGUID))
+            {
+                spriteGUIDToMaximumSize.Add(spriteGUID, Vector2.zero);
+                dataChanged = true;
+            }
 
-                if (!spriteGUIDToMaximumSize.ContainsKey(spriteGUID))
-                    spriteGUIDToMaximumSize.Add(spriteGUID, Vector2.zero);
-                
-                
-                if (gameObject.transform is RectTransform rectTransform)
-                {
-                    Canvas componentInParent = rectTransform.GetComponentInParent<Canvas>();
-                    if (componentInParent != null)
-                    {
-                        RectTransform canvasRectTransform = (RectTransform) componentInParent.transform;
-                        Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRectTransform, rectTransform);
-                    
-                        if (bounds.size.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
-                            spriteGUIDToMaximumSize[spriteGUID] = bounds.size;
-                    }
-                }
-                else
-                {
-                    SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-                    if (spriteRenderer != null)
-                    {
-                        Vector3 finalSize = spriteRenderer.GetPixelSize(Camera);
-                        
-                        if (finalSize.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
-                            spriteGUIDToMaximumSize[spriteGUID] = finalSize;
-                    }
-                }
+            if (spriteUsageSize.sqrMagnitude > spriteGUIDToMaximumSize[spriteGUID].sqrMagnitude)
+            {
+                spriteGUIDToMaximumSize[spriteGUID] = spriteUsageSize;
+                dataChanged = true;
             }
 
             if (string.IsNullOrEmpty(sceneGUID))
@@ -169,7 +145,6 @@ namespace BrunoMikoski.SpriteAuditor
             sceneToSpriteAtlasToSprites.Clear();
             sceneToSingleSprites.Clear();
             spriteToScenes.Clear();
-            spriteToUseCount.Clear();
             spriteToUseTransformPath.Clear();
             spriteToMaximumSize.Clear();
             
@@ -211,22 +186,6 @@ namespace BrunoMikoski.SpriteAuditor
                     {
                         sceneToSingleSprites[scene].Add(sprite);
                     }
-                }
-            }
-            
-            foreach (var spriteGUIDToInstanceToCount in spriteGUIDToInstanceIDToUseCount)
-            {
-                if (!TryGetSpriteFromCache(spriteGUIDToInstanceToCount.Key, out var sprite)) 
-                    continue;
-
-                if (!spriteToUseCount.ContainsKey(sprite))
-                    spriteToUseCount.Add(sprite, 0);
-
-                foreach (var instanceIDToUsage in spriteGUIDToInstanceToCount.Value)
-                {
-                    int count = spriteToUseCount[sprite];
-                    count += instanceIDToUsage.Value;
-                    spriteToUseCount[sprite] = count;
                 }
             }
 
@@ -373,9 +332,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         public int GetSpriteUseCount(Sprite sprite)
         {
-            if (spriteToUseCount.TryGetValue(sprite, out int count))
-                return count;
-
+            if (spriteGUIDToInstancesIDs.TryGetValue(sprite.GetGUID(), out List<int> uniqueUsages))
+                return uniqueUsages.Count;
+            
             return 0;
         }
 

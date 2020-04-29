@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,12 +16,12 @@ namespace BrunoMikoski.SpriteAuditor
         private const string ATLAS_AUDITOR_STORAGE_KEY = "ATLAS_AUDITOR_STORAGE_KEY";
         private static string[] VISUALIZATION_NAMES = {"Scene View", "Atlas View"};
         
-        private const string ATLAS_VIEW_KEY = "ATLAS_VIEW_KEY";
-        private const string SCENE_VIEW_KEY = "SCENE_VIEW_KEY";
-
         private bool isRecording;
         
         private SpriteFinder spriteFinder = new SpriteFinder();
+
+        [SerializeField] 
+        private SceneAsset[] ignoredScenes;
         
         [NonSerialized]
         private SpriteAuditorResult cachedSpriteAuditorResult;
@@ -47,6 +48,8 @@ namespace BrunoMikoski.SpriteAuditor
         private SpriteAuditorForwarder spriteAuditorForwarder;
         private bool showSpritesWithoutAtlas;
         private float spriteUsageSizeThreshold = 0.25f;
+        
+        private SerializedObject spriteAuditorWindowSerializedObject;
 
         [MenuItem("Tools/Sprite Auditor")]
         public static void OpenWindow()
@@ -58,6 +61,7 @@ namespace BrunoMikoski.SpriteAuditor
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            spriteAuditorWindowSerializedObject = new SerializedObject(this);
         }
 
         private void OnDisable()
@@ -164,14 +168,14 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 EditorGUILayout.BeginVertical("Box");
 
-                if (DrawStringFoldout("Used Atlases", ATLAS_VIEW_KEY))
+                if (DrawStringFoldout("Used Atlases", VisualizationType.Atlas.ToString()))
                 {
                     EditorGUI.indentLevel++;
                     foreach (var atlasToUsedSprites in SpriteAuditorResult.AtlasToUsedSprites)
                     {
                         EditorGUILayout.BeginVertical("Box");
 
-                        if (DrawObjectFoldout(atlasToUsedSprites.Key, $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}"))
+                        if (DrawObjectFoldout(atlasToUsedSprites.Key, $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}"))
                         {
                             if (atlasToUsedSprites.Value.Count > 0)
                             {
@@ -179,13 +183,13 @@ namespace BrunoMikoski.SpriteAuditor
 
                                 EditorGUILayout.BeginVertical("Box");
 
-                                if (DrawStringFoldout("Used Sprites", $"{ATLAS_VIEW_KEY}_USED_SPRITES"))
+                                if (DrawStringFoldout("Used Sprites", $"{VisualizationType.Atlas.ToString()}_USED_SPRITES"))
                                 {
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in atlasToUsedSprites.Value)
                                     {
                                         DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.All,
-                                            $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}");
+                                            $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
                                 }
@@ -197,13 +201,13 @@ namespace BrunoMikoski.SpriteAuditor
                             {
                                 EditorGUI.indentLevel++;
                                 EditorGUILayout.BeginVertical("Box");
-                                if (DrawStringFoldout("Not used sprites", $"{ATLAS_VIEW_KEY}_NOT_USED_SPRITES"))
+                                if (DrawStringFoldout("Not used sprites", $"{VisualizationType.Atlas.ToString()}_NOT_USED_SPRITES"))
                                 {
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
                                     {
                                         DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.None,
-                                            $"{ATLAS_VIEW_KEY}_{atlasToUsedSprites.Key.name}");
+                                            $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
                                 }
@@ -238,6 +242,9 @@ namespace BrunoMikoski.SpriteAuditor
                 SceneAsset sceneAsset = sceneGUIDtoSceneAsset.Value;
 
                 EditorGUILayout.BeginVertical("Box");
+                if (ignoredScenes.Contains(sceneAsset))
+                    continue;
+                
                 if (DrawObjectFoldout(sceneAsset, sceneAsset.name))
                 {
                     EditorGUI.indentLevel++;
@@ -265,7 +272,7 @@ namespace BrunoMikoski.SpriteAuditor
                     {
                         EditorGUILayout.BeginVertical("Box");
 
-                        if (DrawObjectFoldout(valuePair.Key, $"{SCENE_VIEW_KEY}_{valuePair.Key}"))
+                        if (DrawObjectFoldout(valuePair.Key, $"{VisualizationType.Scene.ToString()}_{valuePair.Key}"))
                         {
                             EditorGUI.indentLevel++;
                             foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][
@@ -444,7 +451,7 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.LabelField("Settings", EditorStyles.toolbarDropDown);
             EditorGUILayout.Space();
 
-            recordOnPlay = EditorGUILayout.ToggleLeft("Record on play", recordOnPlay);
+            recordOnPlay = EditorGUILayout.Toggle("Record on play", recordOnPlay);
 
             spriteUsageSizeThreshold = EditorGUILayout.Slider("Size Difference Threshold", spriteUsageSizeThreshold, 0, 1);
             
@@ -457,8 +464,10 @@ namespace BrunoMikoski.SpriteAuditor
             if (GUILayout.Button("Refresh References", EditorStyles.toolbarButton))
                 SpriteAuditorResult.SetReferencesDirty(true);
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
 
             
+            EditorGUILayout.BeginVertical("Box");
             EditorGUILayout.LabelField("Caching Tools", EditorStyles.toolbarDropDown);
             EditorGUILayout.Space();
             
@@ -477,7 +486,6 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.EndVertical();
             EditorGUI.EndDisabledGroup();
         }
-
 
         private void StopRecording()
         {
