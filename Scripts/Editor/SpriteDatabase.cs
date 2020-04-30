@@ -1,19 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
 using UnityEngine.UI;
 
 namespace BrunoMikoski.SpriteAuditor
 {
     [Serializable]
-    public class SpriteAuditorResult
+    public class SpriteDatabase
     {
         [SerializeField]
-        private List<SpriteData> spriteDatabase = new List<SpriteData>();
+        private List<SpriteData> spritesData = new List<SpriteData>(512);
+        public List<SpriteData> SpritesData => spritesData;
 
+
+        private SceneViewResultData sceneViewResultData = new SceneViewResultData();
+        
         [SerializeField]
         private Dictionary<string, HashSet<string>> sceneToSprites = new Dictionary<string, HashSet<string>>();
         [SerializeField]
@@ -70,18 +74,6 @@ namespace BrunoMikoski.SpriteAuditor
 
         private Dictionary<Sprite, SpriteUsageIssues> spriteToIssues = new Dictionary<Sprite, SpriteUsageIssues>();
 
-        private Camera cachedCamera;
-        private Camera Camera
-        {
-            get
-            {
-                if (cachedCamera == null)
-                    cachedCamera = Camera.main;
-                return cachedCamera;
-            }
-        }
-        
-        
         public void ReportButton(Button button)
         {
             Image buttonImage = button.targetGraphic as Image;
@@ -150,16 +142,16 @@ namespace BrunoMikoski.SpriteAuditor
                 return spriteData;
             
             spriteData = new SpriteData(sprite);
-            spriteDatabase.Add(spriteData);
+            spritesData.Add(spriteData);
             return spriteData;
         }
 
         private bool TryFoundSpriteData(Sprite sprite, out SpriteData spriteData)
         {
-            int spriteDatabaseCount = spriteDatabase.Count;
+            int spriteDatabaseCount = spritesData.Count;
             for (int i = 0; i < spriteDatabaseCount; i++)
             {
-                SpriteData data = spriteDatabase[i];
+                SpriteData data = spritesData[i];
                 if (data.Sprite == sprite)
                 {
                     spriteData = data;
@@ -175,7 +167,7 @@ namespace BrunoMikoski.SpriteAuditor
         {
             bool dataChanged = false;
 
-            Scene targetScene = gameObject.scene;
+            UnityEngine.SceneManagement.Scene targetScene = gameObject.scene;
 
             string sceneGUID = AssetDatabase.AssetPathToGUID(targetScene.path);
             string spriteGUID = targetSprite.GetGUID();
@@ -232,7 +224,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        public void AssignReferences()
+        public void GenerateResults()
         {
             if (!isReferencesDirty)
                 return;
@@ -379,36 +371,7 @@ namespace BrunoMikoski.SpriteAuditor
            return false;
         }
 
-        public void CacheKnowAtlases()
-        {
-            atlasToAllSprites.Clear();
-            atlasToScale.Clear();
-
-            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
-            
-            for (int i = 0; i < atlasGUIDs.Length; i++)
-            {
-                SpriteAtlas atlas =
-                    AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
-
-                if (!atlas.IsIncludedInBuild())
-                    continue;
-
-                if (atlas.isVariant)
-                {
-                    if (atlas.TryGetMasterAtlas(out SpriteAtlas masterAtlas))
-                    {
-                        atlasToScale.Add(atlas, atlas.GetVariantScale());
-                        atlasToAllSprites.Add(atlas, masterAtlas.GetAllSprites());
-                    }
-                }
-                else
-                {
-                    atlasToAllSprites.Add(atlas, atlas.GetAllSprites());
-                    atlasToScale.Add(atlas, 1.0f);
-                }
-            }
-        }
+        
 
         public bool TryGetSpriteSceneUsages(Sprite sprite, out HashSet<SceneAsset> sceneAssets)
         {
@@ -449,8 +412,12 @@ namespace BrunoMikoski.SpriteAuditor
         
         public void ClearAtlasesCache()
         {
-            CacheKnowAtlases();
+            //CacheKnowAtlases();
         }
 
+        public void RefreshResults()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -6,17 +6,18 @@ using UnityEngine.SceneManagement;
 namespace BrunoMikoski.SpriteAuditor
 {
     [Serializable]
-    internal class SpriteUseData
+    public class SpriteUseData
     {
         [SerializeField]
         private HashSet<string> paths = new HashSet<string>();
+
         [SerializeField]
-        private HashSet<string> scenesPath = new HashSet<string>();
+        private string firstPath;
+        public string FirstPath => firstPath;
+
         [SerializeField]
         private int instanceID;
         public int InstanceID => instanceID;
-
-        private bool usedOnDontDestroyOnLoadScene;
 
         public SpriteUseData(int instanceID)
         {
@@ -25,18 +26,11 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportPath(string usagePath, Scene targetScene)
         {
-            paths.Add($"{targetScene.path}:{usagePath}");
-        }
+            string storagePath = $"{targetScene.path}:{usagePath}";
 
-        public void ReportScene(Scene scene)
-        {
-            //-1 is the Dont Destroy On load Scene
-            if (scene.buildIndex == -1)
-                usedOnDontDestroyOnLoadScene = true;
-            else
-                scenesPath.Add(scene.path);
+            if (paths.Count == 0)
+                firstPath = storagePath;
+            paths.Add(storagePath);
         }
-
-        
     }
 }

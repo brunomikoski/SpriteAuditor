@@ -24,16 +24,18 @@ namespace BrunoMikoski.SpriteAuditor
         private SceneAsset[] ignoredScenes;
         
         [NonSerialized]
-        private SpriteAuditorResult cachedSpriteAuditorResult;
-        private SpriteAuditorResult SpriteAuditorResult
+        private SpriteDatabase cachedSpriteDatabase;
+        private SpriteDatabase SpriteDatabase
         {
             get
             {
-                if (cachedSpriteAuditorResult == null)
+                if (cachedSpriteDatabase == null)
                     LoadOrCreateAtlasResult();
-                return cachedSpriteAuditorResult;
+                return cachedSpriteDatabase;
             }
         }
+
+        private ResultViewDataBase[] resultViews;
 
         private Dictionary<string, bool> keyToFoldout = new Dictionary<string, bool>();
 
@@ -46,7 +48,6 @@ namespace BrunoMikoski.SpriteAuditor
         private bool recordOnPlay = true;
         private VisualizationType visualizationType = VisualizationType.Scene;
         private SpriteAuditorForwarder spriteAuditorForwarder;
-        private bool showSpritesWithoutAtlas;
         private float spriteUsageSizeThreshold = 0.25f;
         
         private SerializedObject spriteAuditorWindowSerializedObject;
@@ -74,18 +75,14 @@ namespace BrunoMikoski.SpriteAuditor
             if (EditorApplication.isPlaying)
             {
                 if (recordOnPlay)
-                {
-                    SpriteAuditorResult.CacheKnowAtlases();
                     StartRecording();
-                }
             }
             else
             {
                 if (isRecording)
                 {
                     StopRecording();
-                    SpriteAuditorResult.CacheKnowAtlases();
-                    SpriteAuditorResult.AssignReferences();
+                    SpriteDatabase.GenerateResults();
                 }
             }
         }
@@ -95,29 +92,29 @@ namespace BrunoMikoski.SpriteAuditor
             string storedJson = EditorPrefs.GetString(ATLAS_AUDITOR_STORAGE_KEY, string.Empty);
             if (!string.IsNullOrEmpty(storedJson))
             {
-                cachedSpriteAuditorResult = new SpriteAuditorResult();
-                JsonWrapper.FromJson(storedJson, ref cachedSpriteAuditorResult);
+                cachedSpriteDatabase = new SpriteDatabase();
+                JsonWrapper.FromJson(storedJson, ref cachedSpriteDatabase);
             }
             else
             {
-                cachedSpriteAuditorResult = new SpriteAuditorResult();
+                cachedSpriteDatabase = new SpriteDatabase();
             }
         }
 
         private void SaveAtlasResult()
         {
-            if (!SpriteAuditorResult.IsSaveDataDirty)
+            if (!SpriteDatabase.IsSaveDataDirty)
                 return;
                 
-            string json = JsonWrapper.ToJson(SpriteAuditorResult);
+            string json = JsonWrapper.ToJson(SpriteDatabase);
             EditorPrefs.SetString(ATLAS_AUDITOR_STORAGE_KEY, json);
-            SpriteAuditorResult.SetDataDirty(false);
+            SpriteDatabase.SetDataDirty(false);
         }
         
         private void ClearCache()
         {
             EditorPrefs.DeleteKey(ATLAS_AUDITOR_STORAGE_KEY);
-            cachedSpriteAuditorResult = new SpriteAuditorResult();
+            cachedSpriteDatabase = new SpriteDatabase();
         }
         
         private void OnGUI()
@@ -132,10 +129,10 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawResults()
         {
-            if (SpriteAuditorResult == null)
+            if (SpriteDatabase == null)
                 return;
 
-            SpriteAuditorResult.AssignReferences();
+            SpriteDatabase.GenerateResults();
 
             EditorGUILayout.BeginVertical("Box");
             EditorGUILayout.LabelField("Results", EditorStyles.toolbarDropDown);
@@ -158,20 +155,23 @@ namespace BrunoMikoski.SpriteAuditor
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
+            if (GUILayout.Button("Refresh Results"))
+            {
+                resultViews[(int) visualizationType].GenerateResults(SpriteDatabase);
+            }
         }
 
         private void DrawResultsByAtlas()
         {
-
-            if (SpriteAuditorResult.AtlasToUsedSprites.Count > 0)
+            if (SpriteDatabase.AtlasToUsedSprites.Count > 0)
             {
                 EditorGUILayout.BeginVertical("Box");
 
                 if (DrawStringFoldout("Used Atlases", VisualizationType.Atlas.ToString()))
                 {
                     EditorGUI.indentLevel++;
-                    foreach (var atlasToUsedSprites in SpriteAuditorResult.AtlasToUsedSprites)
+                    foreach (var atlasToUsedSprites in SpriteDatabase.AtlasToUsedSprites)
                     {
                         EditorGUILayout.BeginVertical("Box");
 
@@ -197,14 +197,14 @@ namespace BrunoMikoski.SpriteAuditor
                                 EditorGUILayout.EndVertical();
                             }
 
-                            if (SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key].Count > 0)
+                            if (SpriteDatabase.AtlasToNotUsedSprites[atlasToUsedSprites.Key].Count > 0)
                             {
                                 EditorGUI.indentLevel++;
                                 EditorGUILayout.BeginVertical("Box");
                                 if (DrawStringFoldout("Not used sprites", $"{VisualizationType.Atlas.ToString()}_NOT_USED_SPRITES"))
                                 {
                                     EditorGUI.indentLevel++;
-                                    foreach (Sprite sprite in SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
+                                    foreach (Sprite sprite in SpriteDatabase.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
                                     {
                                         DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDrawDetails.None,
                                             $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
@@ -235,31 +235,32 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawResultsByScene()
         {
-            EditorGUILayout.BeginVertical("Box");
-            
-            foreach (var sceneGUIDtoSceneAsset in SpriteAuditorResult.SceneGUIDToSceneAssetCache)
-            {
-                SceneAsset sceneAsset = sceneGUIDtoSceneAsset.Value;
+            SceneViewResultData sceneViewResult = (SceneViewResultData) resultViews[(int) VisualizationType.Scene];
 
+            EditorGUILayout.BeginVertical("Box");
+
+
+            for (int i = 0; i < sceneViewResult.SceneAssets.Length; i++)
+            {
+                SceneAsset sceneAsset = sceneViewResult.SceneAssets[i];
+                
                 EditorGUILayout.BeginVertical("Box");
                 if (ignoredScenes.Contains(sceneAsset))
                     continue;
-                
+
                 if (DrawObjectFoldout(sceneAsset, sceneAsset.name))
                 {
                     EditorGUI.indentLevel++;
-                    if (SpriteAuditorResult.SceneToSingleSprites[sceneAsset].Count > 0)
+                    if (sceneViewResult.sceneToSingleSprites[sceneAsset].Length > 0)
                     {
                         EditorGUILayout.BeginVertical("Box");
-                        showSpritesWithoutAtlas = EditorGUILayout.Foldout(showSpritesWithoutAtlas,
-                            "Sprites without atlas",
-                            EditorStyles.foldout);
-                        if (showSpritesWithoutAtlas)
+                        
+                        if(DrawStringFoldout("Sprites Without Atlas", "SceneViewSpritesWithoutAtlas"))
                         {
                             EditorGUI.indentLevel++;
-                            foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
+                            foreach (SpriteData spriteData in sceneViewResult.sceneToSingleSprites[sceneAsset])
                             {
-                                DrawSpriteField(sprite, null, sceneAsset, SpriteDrawDetails.All, sceneAsset.name);
+                                DrawSpriteDataField(spriteData, SpriteDrawDetails.All);
                             }
 
                             EditorGUI.indentLevel--;
@@ -268,17 +269,16 @@ namespace BrunoMikoski.SpriteAuditor
                         EditorGUILayout.EndVertical();
                     }
 
-                    foreach (var valuePair in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset])
+                    foreach (var atlasToUSedSprites in sceneViewResult.sceneToAtlasToUsedSprites[sceneAsset])
                     {
                         EditorGUILayout.BeginVertical("Box");
 
-                        if (DrawObjectFoldout(valuePair.Key, $"{VisualizationType.Scene.ToString()}_{valuePair.Key}"))
+                        if (DrawObjectFoldout(atlasToUSedSprites.Key, $"{VisualizationType.Scene.ToString()}_{atlasToUSedSprites.Key}"))
                         {
                             EditorGUI.indentLevel++;
-                            foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][
-                                valuePair.Key])
+                            foreach (SpriteData spriteData in sceneViewResult.sceneToAtlasToUsedSprites[sceneAsset][atlasToUSedSprites.Key])
                             {
-                                DrawSpriteField(sprite, valuePair.Key, sceneAsset, SpriteDrawDetails.All, valuePair.Key.name);
+                                DrawSpriteDataField(spriteData, SpriteDrawDetails.All);
                             }
 
                             EditorGUI.indentLevel--;
@@ -286,10 +286,13 @@ namespace BrunoMikoski.SpriteAuditor
 
                         EditorGUILayout.EndVertical();
                     }
+
                     EditorGUI.indentLevel--;
                 }
+
                 EditorGUILayout.EndVertical();
             }
+
             EditorGUILayout.EndVertical();
         }
 
@@ -317,6 +320,27 @@ namespace BrunoMikoski.SpriteAuditor
             return keyToFoldout[foldoutKey];
         }
 
+        private void DrawSpriteDataField(SpriteData spriteData, SpriteDrawDetails drawDetails)
+        {
+            if (DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name, !drawDetails.HasFlag(SpriteDrawDetails.None)))
+            {
+                EditorGUI.indentLevel++;
+
+                if (drawDetails.HasFlag(SpriteDrawDetails.UsageCount))
+                    DrawSpriteUsageCount(spriteData);
+
+                if (drawDetails.HasFlag(SpriteDrawDetails.SizeDetails))
+                    DrawSpriteSizeDetails(spriteData);
+
+                if (drawDetails.HasFlag(SpriteDrawDetails.ReferencesPath))
+                    DrawSpriteReferencesPath(spriteData);
+
+                if (drawDetails.HasFlag(SpriteDrawDetails.SceneReferences))
+                    DrawSpriteSceneReferences(spriteData);
+                EditorGUI.indentLevel--;
+            }
+        }
+
         private void DrawSpriteField(Sprite sprite, SpriteAtlas atlas = null, SceneAsset sceneAsset = null,
             SpriteDrawDetails drawDetails = SpriteDrawDetails.All, string foldoutKey = "")
         {
@@ -333,7 +357,7 @@ namespace BrunoMikoski.SpriteAuditor
                 {
                     float scale = 1.0f;
                     if (atlas != null)
-                        scale = SpriteAuditorResult.AtlasToScale[atlas];
+                        scale = SpriteDatabase.AtlasToScale[atlas];
                     DrawSpriteSizeDetails(sprite, scale);
                 }    
 
@@ -347,12 +371,25 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.EndVertical();
         }
 
+        private void DrawSpriteSceneReferences(SpriteData spriteData)
+        {
+            EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+
+            foreach (SceneAsset sceneAsset in spriteData.SceneAssets)
+            {
+                EditorGUILayout.ObjectField(sceneAsset, typeof(SceneAsset), false);
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
         private void DrawSpriteSceneReferences(Sprite sprite)
         {
             EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            foreach (var scene in SpriteAuditorResult.SpriteToScenes[sprite])
+            foreach (var scene in SpriteDatabase.SpriteToScenes[sprite])
             {
                 EditorGUILayout.ObjectField(scene, typeof(SceneAsset), false);
             }
@@ -360,12 +397,34 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUI.indentLevel--;
         }
 
+        private void DrawSpriteReferencesPath(SpriteData spriteData)
+        {
+            EditorGUILayout.LabelField("Usages", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+
+            for (int i = 0; i < spriteData.Usages.Count; i++)
+            {
+                SpriteUseData spriteUseData = spriteData.Usages[i];
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(spriteUseData.FirstPath);
+                
+                if (GUILayout.Button("Select", EditorStyles.miniButton))
+                    TrySelectObjectAtPath(spriteUseData.FirstPath);
+                
+                EditorGUILayout.EndHorizontal();
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+       
+
         private void DrawSpriteReferencesPath(SceneAsset sceneAsset, Sprite sprite)
         {
             EditorGUILayout.LabelField("Usages", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            foreach (string usePath in SpriteAuditorResult.SpriteToUseTransformPath[sprite])
+            foreach (string usePath in SpriteDatabase.SpriteToUseTransformPath[sprite])
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(usePath);
@@ -384,7 +443,72 @@ namespace BrunoMikoski.SpriteAuditor
         {
             EditorGUILayout.LabelField($"Total Usages Found", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            EditorGUILayout.LabelField($"{SpriteAuditorResult.GetSpriteUseCount(sprite)}");
+            EditorGUILayout.LabelField($"{SpriteDatabase.GetSpriteUseCount(sprite)}");
+            EditorGUI.indentLevel--;
+        }
+        
+        private void DrawSpriteUsageCount(SpriteData spriteData)
+        {
+            EditorGUILayout.LabelField($"Total Usages Found", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField($"{spriteData.Usages.Count}");
+            EditorGUI.indentLevel--;
+        }
+
+        private void DrawSpriteSizeDetails(SpriteData spriteData)
+        {
+            EditorGUILayout.LabelField("Size", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            
+            Vector3 minUseSize = spriteData.MinimumUsageSize;
+            if (minUseSize != Vector3.zero)
+            {
+                EditorGUILayout.LabelField(
+                    $"Minimum Use Size Width: {Mathf.RoundToInt(minUseSize.x)} Height: {Mathf.RoundToInt(minUseSize.y)}");
+            }
+            
+            Vector3 maxUseSize = spriteData.MaximumUsageSize;
+            if (maxUseSize != Vector3.zero)
+            {
+                EditorGUILayout.LabelField(
+                    $"Max Use Size Width: {Mathf.RoundToInt(maxUseSize.x)} Height: {Mathf.RoundToInt(maxUseSize.y)}");
+            }
+            
+            Vector3 avgUseSize = spriteData.AverageUsageSize;
+            if (avgUseSize != Vector3.zero)
+            {
+                EditorGUILayout.LabelField(
+                    $"Average Size Width: {Mathf.RoundToInt(avgUseSize.x)} Height: {Mathf.RoundToInt(avgUseSize.y)}");
+            }
+
+            Vector2 spriteSize = spriteData.SpriteSize;
+            EditorGUILayout.LabelField(
+                $"Sprite Rect Size Width: {Mathf.RoundToInt(spriteSize.x)} Height: {Mathf.RoundToInt(spriteSize.y)}");
+
+            
+            // Vector3 sizeDifference = new Vector3(avgUseSize.x - spriteSize.x,
+            //     avgUseSize.y - spriteSize.y, 0);
+            //
+            // float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
+            //
+            // if (Mathf.Abs(differenceMagnitude) > spriteUsageSizeThreshold)
+            // {
+            //     if (avgUseSize.sqrMagnitude > spriteSize.sqrMagnitude)
+            //     {
+            //         EditorGUILayout.HelpBox(
+            //             $"Sprite used with a size {differenceMagnitude:P} times bigger than imported sprite size," +
+            //             $" you may consider resizing it up",
+            //             MessageType.Warning);
+            //     }
+            //     else
+            //     {
+            //         EditorGUILayout.HelpBox(
+            //             $"Sprite used with a size {differenceMagnitude:P} times smaller than imported sprite size," +
+            //             $" you may consider resizing it down",
+            //             MessageType.Warning);
+            //     }
+            // }
+ 
             EditorGUI.indentLevel--;
         }
 
@@ -392,7 +516,7 @@ namespace BrunoMikoski.SpriteAuditor
         {
             EditorGUILayout.LabelField("Size", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            Vector3 spriteMaxUseSize = SpriteAuditorResult.GetSpriteMaxUseSize(sprite);
+            Vector3 spriteMaxUseSize = SpriteDatabase.GetSpriteMaxUseSize(sprite);
             EditorGUILayout.LabelField(
                 $"Max Use Size Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
 
@@ -429,6 +553,23 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUI.indentLevel--;
         }
 
+        
+        
+        private void TrySelectObjectAtPath(string selectionPath)
+        {
+            string[] paths = selectionPath.Split(':');
+            if (paths.Length < 2)
+                return;
+            if (!Application.isPlaying)
+            {
+                EditorSceneManager.OpenScene(paths[0], OpenSceneMode.Additive);
+            }
+            GameObject gameObject = GameObject.Find(paths[1]);
+            if (gameObject == null)
+                return;
+            
+            Selection.SetActiveObjectWithContext(gameObject, this);
+        }
         private void TrySelectObjectAtPath(SceneAsset sceneAsset, string usePath)
         {
             if (!Application.isPlaying)
@@ -462,7 +603,7 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUI.EndDisabledGroup();
 
             if (GUILayout.Button("Refresh References", EditorStyles.toolbarButton))
-                SpriteAuditorResult.SetReferencesDirty(true);
+                SpriteDatabase.SetReferencesDirty(true);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
 
@@ -473,10 +614,10 @@ namespace BrunoMikoski.SpriteAuditor
             
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh Know Atlas", EditorStyles.toolbarButton))
-                SpriteAuditorResult.ClearAtlasesCache();
+                SpriteDatabase.ClearAtlasesCache();
             
             if (GUILayout.Button("Clear Maximum Size References", EditorStyles.toolbarButton))
-                SpriteAuditorResult.ClearAllSpritesKnowSizes();
+                SpriteDatabase.ClearAllSpritesKnowSizes();
 
             if (GUILayout.Button("Pack Atlases", EditorStyles.toolbarButton))
                 SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
@@ -506,7 +647,7 @@ namespace BrunoMikoski.SpriteAuditor
             
             isRecording = true;
 
-            spriteFinder.SetResult(SpriteAuditorResult);
+            spriteFinder.SetResult(SpriteDatabase);
             GameObject spriteAuditorGameObject = new GameObject("Sprite Auditor Forwarder");
             
             spriteAuditorForwarder = spriteAuditorGameObject.AddComponent<SpriteAuditorForwarder>();

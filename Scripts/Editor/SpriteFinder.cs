@@ -7,14 +7,14 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public class SpriteFinder : IProjectUpdateLoopListener
     {
-        private SpriteAuditorResult result;
+        private SpriteDatabase result;
 
         private List<Image> images = new List<Image>(1000);
         private List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>(1000);
         private List<SpriteMask> spriteMasks = new List<SpriteMask>(1000);
         private List<Button> buttons = new List<Button>(1000);
         
-        public void SetResult(SpriteAuditorResult targetResult)
+        public void SetResult(SpriteDatabase targetResult)
         {
             result = targetResult;
         }
@@ -62,7 +62,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
-                Scene scene = SceneManager.GetSceneAt(i);
+                UnityEngine.SceneManagement.Scene scene = SceneManager.GetSceneAt(i);
                 if (scene.isLoaded)
                 {
                     GameObject[] allGameObjects = scene.GetRootGameObjects();
