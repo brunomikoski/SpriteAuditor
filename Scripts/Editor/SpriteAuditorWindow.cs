@@ -188,7 +188,7 @@ namespace BrunoMikoski.SpriteAuditor
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in atlasToUsedSprites.Value)
                                     {
-                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.All,
+                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDrawDetails.All,
                                             $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
@@ -206,7 +206,7 @@ namespace BrunoMikoski.SpriteAuditor
                                     EditorGUI.indentLevel++;
                                     foreach (Sprite sprite in SpriteAuditorResult.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
                                     {
-                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDetails.None,
+                                        DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDrawDetails.None,
                                             $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
                                     }
                                     EditorGUI.indentLevel--;
@@ -259,7 +259,7 @@ namespace BrunoMikoski.SpriteAuditor
                             EditorGUI.indentLevel++;
                             foreach (Sprite sprite in SpriteAuditorResult.SceneToSingleSprites[sceneAsset])
                             {
-                                DrawSpriteField(sprite, null, sceneAsset, SpriteDetails.All, sceneAsset.name);
+                                DrawSpriteField(sprite, null, sceneAsset, SpriteDrawDetails.All, sceneAsset.name);
                             }
 
                             EditorGUI.indentLevel--;
@@ -278,7 +278,7 @@ namespace BrunoMikoski.SpriteAuditor
                             foreach (Sprite sprite in SpriteAuditorResult.SceneToSpriteAtlasToSprites[sceneAsset][
                                 valuePair.Key])
                             {
-                                DrawSpriteField(sprite, valuePair.Key, sceneAsset, SpriteDetails.All, valuePair.Key.name);
+                                DrawSpriteField(sprite, valuePair.Key, sceneAsset, SpriteDrawDetails.All, valuePair.Key.name);
                             }
 
                             EditorGUI.indentLevel--;
@@ -318,18 +318,18 @@ namespace BrunoMikoski.SpriteAuditor
         }
 
         private void DrawSpriteField(Sprite sprite, SpriteAtlas atlas = null, SceneAsset sceneAsset = null,
-            SpriteDetails details = SpriteDetails.All, string foldoutKey = "")
+            SpriteDrawDetails drawDetails = SpriteDrawDetails.All, string foldoutKey = "")
         {
             EditorGUILayout.BeginVertical("Box");
 
-            if (DrawObjectFoldout(sprite, $"{foldoutKey}_{sprite.name}", !details.HasFlag(SpriteDetails.None)))
+            if (DrawObjectFoldout(sprite, $"{foldoutKey}_{sprite.name}", !drawDetails.HasFlag(SpriteDrawDetails.None)))
             {
                 EditorGUI.indentLevel++;
 
-                if (details.HasFlag(SpriteDetails.UsageCount))
+                if (drawDetails.HasFlag(SpriteDrawDetails.UsageCount))
                     DrawSpriteUsageCount(sprite);
 
-                if (details.HasFlag(SpriteDetails.SizeDetails))
+                if (drawDetails.HasFlag(SpriteDrawDetails.SizeDetails))
                 {
                     float scale = 1.0f;
                     if (atlas != null)
@@ -337,10 +337,10 @@ namespace BrunoMikoski.SpriteAuditor
                     DrawSpriteSizeDetails(sprite, scale);
                 }    
 
-                if (details.HasFlag(SpriteDetails.ReferencesPath))
+                if (drawDetails.HasFlag(SpriteDrawDetails.ReferencesPath))
                     DrawSpriteReferencesPath(sceneAsset, sprite);
 
-                if (details.HasFlag(SpriteDetails.SceneReferences))
+                if (drawDetails.HasFlag(SpriteDrawDetails.SceneReferences))
                     DrawSpriteSceneReferences(sprite);
                 EditorGUI.indentLevel--;
             }

@@ -3,7 +3,7 @@
 namespace BrunoMikoski.SpriteAuditor
 {
     [Flags]
-    internal enum SpriteDetails
+    internal enum SpriteDrawDetails
     {
         None = 1,
         UsageCount = 2,
