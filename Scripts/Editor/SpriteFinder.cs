@@ -62,7 +62,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
-                UnityEngine.SceneManagement.Scene scene = SceneManager.GetSceneAt(i);
+                Scene scene = SceneManager.GetSceneAt(i);
                 if (scene.isLoaded)
                 {
                     GameObject[] allGameObjects = scene.GetRootGameObjects();

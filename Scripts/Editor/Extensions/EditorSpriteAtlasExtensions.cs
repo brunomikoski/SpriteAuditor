@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.U2D;
 
@@ -70,7 +71,7 @@ namespace UnityEngine.U2D
         private static List<Sprite> GetAllSpritesFromFolder(string targetFolder)
         {
             List<Sprite> result = new List<Sprite>();
-            string[] spritesGUIDs = AssetDatabase.FindAssets("t:Sprite");
+            string[] spritesGUIDs = AssetDatabase.FindAssets("t:Sprite", new[] {targetFolder});
             Uri rootFolder = new Uri(Path.GetFullPath(targetFolder));
             for (int i = 0; i < spritesGUIDs.Length; i++)
             {
@@ -80,7 +81,9 @@ namespace UnityEngine.U2D
 
                 if (rootFolder != spriteUri && rootFolder.IsBaseOf(spriteUri))
                 {
-                    result.Add(AssetDatabase.LoadAssetAtPath<Sprite>(spritePath));
+                    Sprite[] allSprites = AssetDatabase.LoadAllAssetsAtPath(spritePath).Where(o => o is Sprite)
+                        .Cast<Sprite>().ToArray();
+                    result.AddRange(allSprites);
                 }
             }
 

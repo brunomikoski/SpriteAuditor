@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
 
 namespace BrunoMikoski.SpriteAuditor
 {
-    public static class AtlasUtility
+    public static class AtlasCacheUtility
     {
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
         private static Dictionary<SpriteAtlas, float> atlasToScale = new Dictionary<SpriteAtlas, float>();
 
-        private static bool hasDataCached = false;
+        private static bool hasDataCached;
         
         private static void CacheKnowAtlases()
         {
@@ -27,19 +28,19 @@ namespace BrunoMikoski.SpriteAuditor
                 if (!atlas.IsIncludedInBuild())
                     continue;
 
+                Sprite[] sprites = atlas.GetAllSprites().Distinct().ToArray();
+
+                float scale = 1.0f;
                 if (atlas.isVariant)
                 {
                     if (atlas.TryGetMasterAtlas(out SpriteAtlas masterAtlas))
-                    {
-                        atlasToScale.Add(atlas, atlas.GetVariantScale());
-                        atlasToAllSprites.Add(atlas, masterAtlas.GetAllSprites().ToArray());
-                    }
+                        sprites = masterAtlas.GetAllSprites().Distinct().ToArray();
+
+                    scale = atlas.GetVariantScale();
                 }
-                else
-                {
-                    atlasToAllSprites.Add(atlas, atlas.GetAllSprites().ToArray());
-                    atlasToScale.Add(atlas, 1.0f);
-                }
+                
+                atlasToAllSprites.Add(atlas, sprites);
+                atlasToScale.Add(atlas, scale);
             }
 
             hasDataCached = true;

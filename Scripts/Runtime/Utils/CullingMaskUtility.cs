@@ -23,6 +23,9 @@ namespace BrunoMikoski.SpriteAuditor.Utils
             for (int i = 0; i < knowCameras.Length; i++)
             {
                 Camera knowCamera = knowCameras[i];
+                if (knowCamera == null)
+                    continue;
+                
                 if ((knowCamera.cullingMask & (1 << gameObjectLayer)) != 0)
                 {
                     camera = knowCamera;
@@ -37,7 +40,7 @@ namespace BrunoMikoski.SpriteAuditor.Utils
                 return TryGetCameraForGameObject(gameObject, out camera, false);
             }
             
-            camera = Camera.main;
+            camera = null;
             return false;
         }
         
