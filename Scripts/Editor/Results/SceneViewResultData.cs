@@ -70,8 +70,6 @@ namespace BrunoMikoski.SpriteAuditor
             if (!resultsGeneratedOnce)
                 GenerateResults(spriteDatabase);
 
-            EditorGUILayout.BeginVertical("Box");
-
             for (int i = 0; i < sceneAssets.Length; i++)
             {
                 SceneAsset sceneAsset = sceneAssets[i];
@@ -127,8 +125,6 @@ namespace BrunoMikoski.SpriteAuditor
 
                 EditorGUILayout.EndVertical();
             }
-
-            EditorGUILayout.EndVertical();
         }
     }
 }

@@ -35,7 +35,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         private bool recordOnPlay = true;
         private VisualizationType visualizationType = VisualizationType.Scene;
-        private SpriteAuditorForwarder spriteAuditorForwarder;
+        private SpriteAuditorEventForwarder spriteAuditorEventForwarder;
         private float spriteUsageSizeThreshold = 0.25f;
         
         
@@ -95,15 +95,10 @@ namespace BrunoMikoski.SpriteAuditor
         private void LoadOrCreateAtlasResult()
         {
             string storedJson = EditorPrefs.GetString(ATLAS_AUDITOR_STORAGE_KEY, string.Empty);
+            cachedSpriteDatabase = new SpriteDatabase(visualizationType);
+
             if (!string.IsNullOrEmpty(storedJson))
-            {
-                cachedSpriteDatabase = new SpriteDatabase();
                 JsonWrapper.FromJson(storedJson, ref cachedSpriteDatabase);
-            }
-            else
-            {
-                cachedSpriteDatabase = new SpriteDatabase();
-            }
         }
 
         private void SaveAtlasResult()
@@ -115,7 +110,7 @@ namespace BrunoMikoski.SpriteAuditor
         private void ClearCache()
         {
             EditorPrefs.DeleteKey(ATLAS_AUDITOR_STORAGE_KEY);
-            cachedSpriteDatabase = new SpriteDatabase();
+            cachedSpriteDatabase = new SpriteDatabase(visualizationType);
         }
         
         private void OnGUI()
@@ -133,25 +128,34 @@ namespace BrunoMikoski.SpriteAuditor
             if (SpriteDatabase == null)
                 return;
 
-            // SpriteDatabase.GenerateResults();
-
             EditorGUILayout.BeginVertical("Box");
             EditorGUILayout.LabelField("Results", EditorStyles.toolbarDropDown);
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.BeginHorizontal("Box");
+            EditorGUI.BeginChangeCheck();
             visualizationType =
                 (VisualizationType) GUILayout.SelectionGrid((int) visualizationType, VISUALIZATION_NAMES, 2,
                     EditorStyles.radioButton);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SpriteDatabase.SetVisualizationType(visualizationType);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal("Box");
 
             filter = EditorGUILayout.MaskField("Filter Results", filter, spriteFilterNames);
             EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
 
             SpriteDatabase.DrawResults(visualizationType);
 
             if (GUILayout.Button("Refresh Results"))
                 SpriteDatabase.RefreshResults(visualizationType);
+            
+            EditorGUILayout.EndVertical();
         }
 
         // private void DrawResultsByAtlas()
@@ -381,37 +385,26 @@ namespace BrunoMikoski.SpriteAuditor
 
             recordOnPlay = EditorGUILayout.Toggle("Record on play", recordOnPlay);
 
-            spriteUsageSizeThreshold = EditorGUILayout.Slider("Size Difference Threshold", spriteUsageSizeThreshold, 0, 1);
+            EditorGUI.BeginChangeCheck();
+            spriteUsageSizeThreshold = 
+                EditorGUILayout.Slider("Allowed Size Variation", spriteUsageSizeThreshold, 0, 2);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SpriteDatabase.SetAllowedSizeVariation(spriteUsageSizeThreshold);
+            }
             
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginDisabledGroup(!EditorPrefs.HasKey(ATLAS_AUDITOR_STORAGE_KEY));
             if (GUILayout.Button("Clear Cache", EditorStyles.toolbarButton))
                 ClearCache();
-            EditorGUI.EndDisabledGroup();
-
-            // if (GUILayout.Button("Refresh References", EditorStyles.toolbarButton))
-            //     SpriteDatabase.SetReferencesDirty(true);
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
-
             
-            EditorGUILayout.BeginVertical("Box");
-            EditorGUILayout.LabelField("Caching Tools", EditorStyles.toolbarDropDown);
-            EditorGUILayout.Space();
-            
-            EditorGUILayout.BeginHorizontal();
-            // if (GUILayout.Button("Refresh Know Atlas", EditorStyles.toolbarButton))
-            //     SpriteDatabase.ClearAtlasesCache();
-            
-            // if (GUILayout.Button("Clear Maximum Size References", EditorStyles.toolbarButton))
-            //     SpriteDatabase.ClearAllSpritesKnowSizes();
-
             if (GUILayout.Button("Pack Atlases", EditorStyles.toolbarButton))
                 SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
-            
-            EditorGUILayout.EndHorizontal();
+            EditorGUI.EndDisabledGroup();
 
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
+
             EditorGUI.EndDisabledGroup();
         }
 
@@ -420,8 +413,8 @@ namespace BrunoMikoski.SpriteAuditor
             if (!isRecording)
                 return;
             
-            if (spriteAuditorForwarder != null)
-                Destroy(spriteAuditorForwarder.gameObject);
+            if (spriteAuditorEventForwarder != null)
+                Destroy(spriteAuditorEventForwarder.gameObject);
             
             isRecording = false;
             SaveAtlasResult();
@@ -437,9 +430,9 @@ namespace BrunoMikoski.SpriteAuditor
             spriteFinder.SetResult(SpriteDatabase);
             GameObject spriteAuditorGameObject = new GameObject("Sprite Auditor Forwarder");
             
-            spriteAuditorForwarder = spriteAuditorGameObject.AddComponent<SpriteAuditorForwarder>();
-            spriteAuditorForwarder.SetListener(spriteFinder);
-            DontDestroyOnLoad(spriteAuditorForwarder.gameObject);
+            spriteAuditorEventForwarder = spriteAuditorGameObject.AddComponent<SpriteAuditorEventForwarder>();
+            spriteAuditorEventForwarder.SetListener(spriteFinder);
+            DontDestroyOnLoad(spriteAuditorEventForwarder.gameObject);
         }
     }
 }

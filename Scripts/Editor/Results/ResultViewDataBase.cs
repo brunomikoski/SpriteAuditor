@@ -8,6 +8,8 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public abstract class ResultViewDataBase
     {
+        private float allowedSizeVariation = 0.25f;
+        
         public abstract void GenerateResults(SpriteDatabase spriteDatabase);
 
         public abstract void DrawResults(SpriteDatabase spriteDatabase);
@@ -146,6 +148,11 @@ namespace BrunoMikoski.SpriteAuditor
 
                 Selection.SetActiveObjectWithContext(gameObject, null);
             }
+        }
+
+        public void SetAllowedSizeVariation(float spriteUsageSizeThreshold)
+        {
+            allowedSizeVariation = spriteUsageSizeThreshold;
         }
     }
 }

@@ -13,6 +13,8 @@ namespace BrunoMikoski.SpriteAuditor
     [Serializable]
     public class SpriteData
     {
+        private const string RESOURCES_UNITY_BUILTIN_EXTRA_PATH = "Resources/unity_builtin_extra";
+
         [SerializeField] 
         private string spriteTextureGUID;
 
@@ -64,7 +66,7 @@ namespace BrunoMikoski.SpriteAuditor
         }
 
         [SerializeField] 
-        private SpriteUsageFlags spriteUsageFlags = 0;
+        private SpriteUsageFlags spriteUsageFlags = SpriteUsageFlags.None;
 
         [SerializeField] 
         private float atlasScale = 1;
@@ -131,8 +133,10 @@ namespace BrunoMikoski.SpriteAuditor
             spriteTextureGUID = AssetDatabase.AssetPathToGUID(spriteTexturePath);
             spriteName = targetSprite.name;
 
-            if (string.Equals(spriteTexturePath, "Resources/unity_builtin_extra"))
+            if (string.Equals(spriteTexturePath, RESOURCES_UNITY_BUILTIN_EXTRA_PATH))
+            {
                 spriteUsageFlags |= SpriteUsageFlags.DefaultUnityAsset;
+            }
             
             if (AtlasCacheUtility.TryGetAtlasForSprite(targetSprite, out SpriteAtlas spriteAtlas))
             {
@@ -161,7 +165,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (size == Vector3.zero)
             {
-                spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryUsageSize;
+                spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryAllUsageSize;
                 return;
             }
 
@@ -241,12 +245,12 @@ namespace BrunoMikoski.SpriteAuditor
             if (maximumUsageSize.sqrMagnitude > Sprite.rect.size.sqrMagnitude)
                 spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
             else 
-                spriteUsageFlags &= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
             
             if (minimumUsageSize.sqrMagnitude < Sprite.rect.size.sqrMagnitude)
                 spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
             else
-                spriteUsageFlags &= SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
         }
 
         private SpriteUseData GetOrCreateSpriteUsageData(int instanceID, string usagePath)

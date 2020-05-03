@@ -12,7 +12,12 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField]
         private List<SpriteData> spritesData = new List<SpriteData>(512);
         
-        private SceneViewResultData sceneViewResultData = new SceneViewResultData();
+        private ResultViewDataBase result = null;
+        
+        public SpriteDatabase(VisualizationType visualizationType)
+        {
+            SetVisualizationType(visualizationType);
+        }
 
         public SpriteData[] GetValidSprites()
         {
@@ -109,24 +114,28 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void DrawResults(VisualizationType visualizationType)
         {
-            switch (visualizationType)
-            {
-                case VisualizationType.Scene:
-                    sceneViewResultData.DrawResults(this);
-                    break;
-                case VisualizationType.Atlas:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(visualizationType), visualizationType, null);
-            }
+            result.DrawResults(this);
         }
 
         public void RefreshResults(VisualizationType visualizationType)
         {
-            switch (visualizationType)
+            result.GenerateResults(this);
+        }
+
+        public void SetAllowedSizeVariation(float spriteUsageSizeThreshold)
+        {
+            result.SetAllowedSizeVariation(spriteUsageSizeThreshold);
+        }
+
+        public void SetVisualizationType(VisualizationType? visualizationType)
+        {
+            if (!visualizationType.HasValue)
+                visualizationType = VisualizationType.Atlas;
+            
+            switch (visualizationType.Value)
             {
                 case VisualizationType.Scene:
-                    sceneViewResultData.GenerateResults(this);
+                    result = new SceneViewResultData();
                     break;
                 case VisualizationType.Atlas:
                     break;
