@@ -11,14 +11,14 @@ namespace BrunoMikoski.SpriteAuditor
 
         private readonly Dictionary<SceneAsset, SpriteData[]> sceneToSingleSprites = new Dictionary<SceneAsset, SpriteData[]>();
         private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
-        private bool resultsGeneratedOnce;
+        private bool hasResults;
 
-        public override void GenerateResults(SpriteDatabase spriteDatabase)
+        public override void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter)
         {
             //This method is kinda of dumb doing a lot of repetitive task, but its just easier to read this way
             HashSet<SceneAsset> usedScenes = new HashSet<SceneAsset>();
 
-            SpriteData[] validSprites = spriteDatabase.GetValidSprites();
+            SpriteData[] validSprites = spriteDatabase.GetValidSprites(currentFilter);
             
             for (int i = 0; i < validSprites.Length; i++)
             {
@@ -62,14 +62,14 @@ namespace BrunoMikoski.SpriteAuditor
                 }
             }
 
-            resultsGeneratedOnce = true;
+            hasResults = true;
         }
 
         public override void DrawResults(SpriteDatabase spriteDatabase)
         {
-            if (!resultsGeneratedOnce)
-                GenerateResults(spriteDatabase);
-
+            if (!hasResults)
+                return;
+            
             for (int i = 0; i < sceneAssets.Length; i++)
             {
                 SceneAsset sceneAsset = sceneAssets[i];
@@ -83,12 +83,12 @@ namespace BrunoMikoski.SpriteAuditor
                     {
                         EditorGUILayout.BeginVertical("Box");
                         
-                        if(EditorGUIHelpers.DrawStringFoldout("Sprites Without Atlas", $"{sceneAsset.name}_SceneViewSpritesWithoutAtlas"))
+                        if(EditorGUIHelpers.DrawStringFoldout($"Sprites Without Atlas [{sceneToSingleSprites[sceneAsset].Length}] ", $"{sceneAsset.name}_SceneViewSpritesWithoutAtlas"))
                         {
                             EditorGUI.indentLevel++;
                             foreach (SpriteData spriteData in sceneToSingleSprites[sceneAsset])
                             {
-                                DrawSpriteDataField(spriteData, SpriteDrawDetails.All);
+                                DrawSpriteDataField(spriteData);
                             }
 
                             EditorGUI.indentLevel--;
@@ -110,7 +110,7 @@ namespace BrunoMikoski.SpriteAuditor
                                 foreach (SpriteData spriteData in sceneToAtlasToUsedSprites[sceneAsset][
                                     atlasToUSedSprites.Key])
                                 {
-                                    DrawSpriteDataField(spriteData, SpriteDrawDetails.All);
+                                    DrawSpriteDataField(spriteData);
                                 }
 
                                 EditorGUI.indentLevel--;

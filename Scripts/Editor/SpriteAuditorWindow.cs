@@ -37,10 +37,11 @@ namespace BrunoMikoski.SpriteAuditor
         private VisualizationType visualizationType = VisualizationType.Scene;
         private SpriteAuditorEventForwarder spriteAuditorEventForwarder;
         private float spriteUsageSizeThreshold = 0.25f;
+
+
+        private bool refreshedResultsOnce = false;
         
-        
-        private string[] spriteFilterNames;
-        private int filter;
+        private ResultsFilter currentFilter = (ResultsFilter)  ~0;
 
         [MenuItem("Tools/Sprite Auditor")]
         public static void OpenWindow()
@@ -52,22 +53,6 @@ namespace BrunoMikoski.SpriteAuditor
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
-
-
-            GenerateFiltersOptions();
-        }
-
-        private void GenerateFiltersOptions()
-        {
-            spriteFilterNames = new[]
-            {
-                "Size Warnings",
-                "Used In Only 1 scene",
-                "Used on Dont Destroy On Load Scenes",
-                "Unable to Detect Size",
-                "Single Sprites",
-                "Atlas Sprites"
-            };
         }
 
         private void OnDisable()
@@ -146,236 +131,30 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal("Box");
 
-            filter = EditorGUILayout.MaskField("Filter Results", filter, spriteFilterNames);
+            EditorGUI.BeginChangeCheck();
+            currentFilter = (ResultsFilter) EditorGUILayout.EnumFlagsField("Filter", currentFilter);
+
+            if (EditorGUI.EndChangeCheck())
+                SpriteDatabase.RefreshResults(currentFilter);
+            
+            
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndHorizontal();
 
-            SpriteDatabase.DrawResults(visualizationType);
+            if (!refreshedResultsOnce)
+            {
+                SpriteDatabase.RefreshResults(currentFilter);
+                refreshedResultsOnce = true;
+            }
+            
+            SpriteDatabase.DrawResults();
 
             if (GUILayout.Button("Refresh Results"))
-                SpriteDatabase.RefreshResults(visualizationType);
+                SpriteDatabase.RefreshResults(currentFilter);
             
             EditorGUILayout.EndVertical();
         }
-
-        // private void DrawResultsByAtlas()
-        // {
-        //     if (SpriteDatabase.AtlasToUsedSprites.Count > 0)
-        //     {
-        //         EditorGUILayout.BeginVertical("Box");
-        //
-        //         if (DrawStringFoldout("Used Atlases", VisualizationType.Atlas.ToString()))
-        //         {
-        //             EditorGUI.indentLevel++;
-        //             foreach (var atlasToUsedSprites in SpriteDatabase.AtlasToUsedSprites)
-        //             {
-        //                 EditorGUILayout.BeginVertical("Box");
-        //
-        //                 if (DrawObjectFoldout(atlasToUsedSprites.Key, $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}"))
-        //                 {
-        //                     if (atlasToUsedSprites.Value.Count > 0)
-        //                     {
-        //                         EditorGUI.indentLevel++;
-        //
-        //                         EditorGUILayout.BeginVertical("Box");
-        //
-        //                         if (DrawStringFoldout("Used Sprites", $"{VisualizationType.Atlas.ToString()}_USED_SPRITES"))
-        //                         {
-        //                             EditorGUI.indentLevel++;
-        //                             foreach (Sprite sprite in atlasToUsedSprites.Value)
-        //                             {
-        //                                 DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDrawDetails.All,
-        //                                     $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
-        //                             }
-        //                             EditorGUI.indentLevel--;
-        //                         }
-        //                         EditorGUI.indentLevel--;
-        //                         EditorGUILayout.EndVertical();
-        //                     }
-        //
-        //                     if (SpriteDatabase.AtlasToNotUsedSprites[atlasToUsedSprites.Key].Count > 0)
-        //                     {
-        //                         EditorGUI.indentLevel++;
-        //                         EditorGUILayout.BeginVertical("Box");
-        //                         if (DrawStringFoldout("Not used sprites", $"{VisualizationType.Atlas.ToString()}_NOT_USED_SPRITES"))
-        //                         {
-        //                             EditorGUI.indentLevel++;
-        //                             foreach (Sprite sprite in SpriteDatabase.AtlasToNotUsedSprites[atlasToUsedSprites.Key])
-        //                             {
-        //                                 DrawSpriteField(sprite, atlasToUsedSprites.Key,null, SpriteDrawDetails.None,
-        //                                     $"{VisualizationType.Atlas.ToString()}_{atlasToUsedSprites.Key.name}");
-        //                             }
-        //                             EditorGUI.indentLevel--;
-        //                         }
-        //                         EditorGUILayout.EndVertical();
-        //                         EditorGUI.indentLevel--;
-        //                     }
-        //                 }
-        //                 EditorGUILayout.EndVertical();
-        //             }
-        //             EditorGUI.indentLevel--;
-        //         }
-        //         EditorGUILayout.EndVertical();
-        //     }
-        // }
-
-       
-
-        // private bool DrawObjectFoldout<T>(T targetObject, string foldoutKey, bool showFoldout = true) where T:Object
-        // {
-        //     if (!keyToFoldout.ContainsKey(foldoutKey))
-        //         keyToFoldout.Add(foldoutKey, false);
-        //     
-        //     EditorGUILayout.BeginHorizontal();
-        //
-        //     if (showFoldout)
-        //     {
-        //         GUIStyle style = new GUIStyle(EditorStyles.foldout)
-        //         {
-        //             fixedWidth = 5
-        //         };
-        //             
-        //         keyToFoldout[foldoutKey] = EditorGUILayout.Foldout(keyToFoldout[foldoutKey], "", true, style);
-        //         GUILayout.Space(-34);
-        //     }
-        //             
-        //     EditorGUILayout.ObjectField(targetObject, typeof(T), false);
-        //     EditorGUILayout.EndHorizontal();
-        //
-        //     return keyToFoldout[foldoutKey];
-        // }
-        //
-        //
-        //
-        // private void DrawSpriteField(Sprite sprite, SpriteAtlas atlas = null, SceneAsset sceneAsset = null,
-        //     SpriteDrawDetails drawDetails = SpriteDrawDetails.All, string foldoutKey = "")
-        // {
-        //     EditorGUILayout.BeginVertical("Box");
-        //
-        //     if (DrawObjectFoldout(sprite, $"{foldoutKey}_{sprite.name}", !drawDetails.HasFlag(SpriteDrawDetails.None)))
-        //     {
-        //         EditorGUI.indentLevel++;
-        //
-        //         if (drawDetails.HasFlag(SpriteDrawDetails.UsageCount))
-        //             DrawSpriteUsageCount(sprite);
-        //
-        //         if (drawDetails.HasFlag(SpriteDrawDetails.SizeDetails))
-        //         {
-        //             float scale = 1.0f;
-        //             if (atlas != null)
-        //                 scale = SpriteDatabase.AtlasToScale[atlas];
-        //             DrawSpriteSizeDetails(sprite, scale);
-        //         }    
-        //
-        //         if (drawDetails.HasFlag(SpriteDrawDetails.ReferencesPath))
-        //             DrawSpriteReferencesPath(sceneAsset, sprite);
-        //
-        //         if (drawDetails.HasFlag(SpriteDrawDetails.SceneReferences))
-        //             DrawSpriteSceneReferences(sprite);
-        //         EditorGUI.indentLevel--;
-        //     }
-        //     EditorGUILayout.EndVertical();
-        // }
-        //
-        //
-        //
-        // private void DrawSpriteSceneReferences(Sprite sprite)
-        // {
-        //     EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
-        //     EditorGUI.indentLevel++;
-        //
-        //     foreach (var scene in SpriteDatabase.SpriteToScenes[sprite])
-        //     {
-        //         EditorGUILayout.ObjectField(scene, typeof(SceneAsset), false);
-        //     }
-        //
-        //     EditorGUI.indentLevel--;
-        // }
-        //
-        //
-        //
-        //
-        //
-        // private void DrawSpriteReferencesPath(SceneAsset sceneAsset, Sprite sprite)
-        // {
-        //     EditorGUILayout.LabelField("Usages", EditorStyles.boldLabel);
-        //     EditorGUI.indentLevel++;
-        //
-        //     foreach (string usePath in SpriteDatabase.SpriteToUseTransformPath[sprite])
-        //     {
-        //         EditorGUILayout.BeginHorizontal();
-        //         EditorGUILayout.LabelField(usePath);
-        //         if (GUILayout.Button("Select", EditorStyles.miniButton))
-        //         {
-        //             TrySelectObjectAtPath(sceneAsset, usePath);
-        //         }
-        //
-        //         EditorGUILayout.EndHorizontal();
-        //     }
-        //
-        //     EditorGUI.indentLevel--;
-        // }
-        //
-        //
-        // private void DrawSpriteSizeDetails(Sprite sprite, float atlasScale = 1)
-        // {
-        //     EditorGUILayout.LabelField("Size", EditorStyles.boldLabel);
-        //     EditorGUI.indentLevel++;
-        //     Vector3 spriteMaxUseSize = SpriteDatabase.GetSpriteMaxUseSize(sprite);
-        //     EditorGUILayout.LabelField(
-        //         $"Max Use Size Width: {Mathf.RoundToInt(spriteMaxUseSize.x)} Height: {Mathf.RoundToInt(spriteMaxUseSize.y)}");
-        //
-        //     Vector2 spriteSize = sprite.rect.size;
-        //     spriteSize = spriteSize * atlasScale;
-        //     
-        //     EditorGUILayout.LabelField(
-        //         $"Sprite Size Width: {Mathf.RoundToInt(spriteSize.x)} Height: {Mathf.RoundToInt(spriteSize.y)}");
-        //
-        //     
-        //     Vector3 sizeDifference = new Vector3(spriteMaxUseSize.x - spriteSize.x,
-        //         spriteMaxUseSize.y - spriteSize.y, 0);
-        //
-        //     float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
-        //
-        //     if (Mathf.Abs(differenceMagnitude) > spriteUsageSizeThreshold)
-        //     {
-        //         if (spriteMaxUseSize.sqrMagnitude > spriteSize.sqrMagnitude)
-        //         {
-        //             EditorGUILayout.HelpBox(
-        //                 $"Sprite used with a size {differenceMagnitude:P} times bigger than imported sprite size," +
-        //                 $" you may consider resizing it up",
-        //                 MessageType.Warning);
-        //         }
-        //         else
-        //         {
-        //             EditorGUILayout.HelpBox(
-        //                 $"Sprite used with a size {differenceMagnitude:P} times smaller than imported sprite size," +
-        //                 $" you may consider resizing it down",
-        //                 MessageType.Warning);
-        //         }
-        //     }
-        //
-        //     EditorGUI.indentLevel--;
-        // }
-        //
-        //
-        //
-        //
-        // private void TrySelectObjectAtPath(SceneAsset sceneAsset, string usePath)
-        // {
-        //     if (!Application.isPlaying)
-        //     {
-        //         if (sceneAsset != null)
-        //             EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sceneAsset), OpenSceneMode.Additive);
-        //     }
-        //     
-        //     GameObject gameObject = GameObject.Find(usePath);
-        //     if (gameObject == null)
-        //         return;
-        //     
-        //     Selection.SetActiveObjectWithContext(gameObject, this);
-        // }
-
+        
         private void DrawSettings()
         {
             EditorGUI.BeginDisabledGroup(isRecording);

@@ -19,9 +19,9 @@ namespace BrunoMikoski.SpriteAuditor
             SetVisualizationType(visualizationType);
         }
 
-        public SpriteData[] GetValidSprites()
+        public SpriteData[] GetValidSprites(ResultsFilter currentFilter)
         {
-            return spritesData.Where(data => data.IsValid()).OrderBy(data => data.Sprite.name).ToArray();
+            return spritesData.Where(data => data.IsValid(currentFilter)).OrderBy(data => data.Sprite.name).ToArray();
         }
 
         public void ReportButton(Button button)
@@ -112,14 +112,14 @@ namespace BrunoMikoski.SpriteAuditor
             return false;
         }
 
-        public void DrawResults(VisualizationType visualizationType)
+        public void DrawResults()
         {
             result.DrawResults(this);
         }
 
-        public void RefreshResults(VisualizationType visualizationType)
+        public void RefreshResults(ResultsFilter currentFilter)
         {
-            result.GenerateResults(this);
+            result.GenerateResults(this, currentFilter);
         }
 
         public void SetAllowedSizeVariation(float spriteUsageSizeThreshold)
@@ -127,12 +127,9 @@ namespace BrunoMikoski.SpriteAuditor
             result.SetAllowedSizeVariation(spriteUsageSizeThreshold);
         }
 
-        public void SetVisualizationType(VisualizationType? visualizationType)
+        public void SetVisualizationType(VisualizationType visualizationType)
         {
-            if (!visualizationType.HasValue)
-                visualizationType = VisualizationType.Atlas;
-            
-            switch (visualizationType.Value)
+            switch (visualizationType)
             {
                 case VisualizationType.Scene:
                     result = new SceneViewResultData();

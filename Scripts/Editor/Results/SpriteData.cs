@@ -25,16 +25,12 @@ namespace BrunoMikoski.SpriteAuditor
         private string spriteName;
 
         [SerializeField] 
-        private Vector3 minimumUsageSize = Vector3.positiveInfinity;
-        public Vector3 MinimumUsageSize => minimumUsageSize;
+        private Vector3? minimumUsageSize = null;
+        public Vector3? MinimumUsageSize => minimumUsageSize;
 
         [SerializeField] 
-        private Vector3 maximumUsageSize = Vector3.zero;
-        public Vector3 MaximumUsageSize => maximumUsageSize;
-
-        [SerializeField] 
-        private Vector3 averageUsageSize = Vector3.zero;
-        public Vector3 AverageUsageSize => averageUsageSize;
+        private Vector3? maximumUsageSize = null;
+        public Vector3? MaximumUsageSize => maximumUsageSize;
         
         [SerializeField]
         private string spriteTexturePath;
@@ -66,13 +62,15 @@ namespace BrunoMikoski.SpriteAuditor
         }
 
         [SerializeField] 
-        private SpriteUsageFlags spriteUsageFlags = SpriteUsageFlags.None;
+        private SpriteUsageFlags spriteUsageFlags;
 
         [SerializeField] 
         private float atlasScale = 1;
 
+        [SerializeField]
+        private SpriteImportMode spriteImporterMode;
+        
         private Sprite cachedSprite;
-
         public Sprite Sprite
         {
             get
@@ -91,17 +89,6 @@ namespace BrunoMikoski.SpriteAuditor
 
                 return cachedSprite;
             }
-        }
-
-        public bool IsValid()
-        {
-            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.DefaultUnityAsset))
-                return false;
-
-            if (Sprite == null)
-                return false;
-            
-            return true;
         }
         
         public Vector2 SpriteSize => Sprite.rect.size * atlasScale;
@@ -136,6 +123,7 @@ namespace BrunoMikoski.SpriteAuditor
             if (string.Equals(spriteTexturePath, RESOURCES_UNITY_BUILTIN_EXTRA_PATH))
             {
                 spriteUsageFlags |= SpriteUsageFlags.DefaultUnityAsset;
+                return;
             }
             
             if (AtlasCacheUtility.TryGetAtlasForSprite(targetSprite, out SpriteAtlas spriteAtlas))
@@ -145,17 +133,68 @@ namespace BrunoMikoski.SpriteAuditor
                 atlasScale = AtlasCacheUtility.GetAtlasScale(spriteAtlas);
             }
 
-
             TextureImporter spriteImporter = AssetImporter.GetAtPath(spriteTexturePath) as TextureImporter;
 
             if (spriteImporter != null)
-            {
-                if (spriteImporter.spriteImportMode == SpriteImportMode.Multiple)
-                    spriteUsageFlags |= SpriteUsageFlags.HasMultipleSpritesRect;
-            }
+                spriteImporterMode = spriteImporter.spriteImportMode;
         }
 
-        public void ReportUse(GameObject instance, Vector3 size)
+        public bool IsValid(ResultsFilter currentFilter)
+        {
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.DefaultUnityAsset))
+                return false;
+            
+            if (Sprite == null)
+                return false;
+
+            if (currentFilter.HasFlag(ResultsFilter.SizeWarnings))
+            {
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect)
+                    || spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(ResultsFilter.UsedOnDontDestroyOnLoadScenes))
+            {
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene))
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(ResultsFilter.UsedOnlyOnOneScenes))
+            {
+                if (scenesPath.Count == 1)
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(ResultsFilter.UnableToDetectAllSizes))
+            {
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
+                    return true;
+            }
+
+
+            if (currentFilter.HasFlag(ResultsFilter.SingleSprites))
+            {
+                if (spriteImporterMode == SpriteImportMode.Single)
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(ResultsFilter.MultipleSprites))
+            {
+                if (spriteImporterMode == SpriteImportMode.Multiple)
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(ResultsFilter.InsideAtlasSprites))
+            {
+                if(IsInsideAtlas())
+                    return true;
+            }
+
+            return false;
+        }
+        
+        public void ReportUse(GameObject instance, Vector3? size)
         {
             string usagePath = instance.transform.GetPath();
             SpriteUseData spriteUsageData = GetOrCreateSpriteUsageData(instance.GetInstanceID(), usagePath);
@@ -163,13 +202,13 @@ namespace BrunoMikoski.SpriteAuditor
             ReportScene(instanceScene);
             spriteUsageData.ReportPath(usagePath, instanceScene);
 
-            if (size == Vector3.zero)
+            if (!size.HasValue)
             {
                 spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryAllUsageSize;
                 return;
             }
 
-            ReportSize(size);
+            ReportSize(size.Value);
         }
 
         private void ReportScene(Scene scene)
@@ -198,7 +237,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportUse(SpriteRenderer spriteRenderer)
         {
-            Vector3 size = Vector3.zero;
+            Vector3? size = null;
             if (CullingMaskUtility.TryGetCameraForGameObject(spriteRenderer.gameObject, out Camera camera))
                 size = spriteRenderer.GetPixelSize(camera);
 
@@ -207,7 +246,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportUse(SpriteMask spriteMask)
         {
-            Vector3 size = Vector3.zero;
+            Vector3? size = null;
             if (CullingMaskUtility.TryGetCameraForGameObject(spriteMask.gameObject, out Camera camera))
                 size = spriteMask.GetPixelSize(camera);
 
@@ -216,8 +255,8 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportUse(Image image)
         {
-            Vector3 size = Vector3.zero;
-            if (image.type != Image.Type.Tiled && image.type != Image.Type.Sliced)
+            Vector3? size = null;
+            if (image.type != Image.Type.Tiled && image.type != Image.Type.Sliced && image.type != Image.Type.Filled)
                 size = image.GetPixelSize();
 
             ReportUse(image.gameObject, size);
@@ -225,32 +264,61 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void ReportSize(Vector3 size)
         {
-            if (size.sqrMagnitude > maximumUsageSize.sqrMagnitude)
+            if (!maximumUsageSize.HasValue || size.sqrMagnitude > maximumUsageSize.Value.sqrMagnitude)
             {
                 maximumUsageSize = size;
                 CheckForSizeFlags();
             }
 
-            if (size.sqrMagnitude < minimumUsageSize.sqrMagnitude)
+            if (!minimumUsageSize.HasValue || size.sqrMagnitude < minimumUsageSize.Value.sqrMagnitude)
             {
                 minimumUsageSize = size;
                 CheckForSizeFlags();
             }
-
-            averageUsageSize = (maximumUsageSize + minimumUsageSize) * 0.5f;
         }
 
         private void CheckForSizeFlags()
         {
-            if (maximumUsageSize.sqrMagnitude > Sprite.rect.size.sqrMagnitude)
-                spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
-            else 
-                spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
-            
-            if (minimumUsageSize.sqrMagnitude < Sprite.rect.size.sqrMagnitude)
-                spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
-            else
-                spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
+            Vector2 spriteSize = Sprite.rect.size;
+            if (maximumUsageSize.HasValue)
+            {
+                Vector3 sizeDifference = new Vector3(maximumUsageSize.Value.x - spriteSize.x,
+                    maximumUsageSize.Value.y - spriteSize.y, 0);
+
+                float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
+                if (Mathf.Abs(differenceMagnitude) > 0.25f)
+                {
+                    if (maximumUsageSize.Value.sqrMagnitude > spriteSize.sqrMagnitude)
+                    {
+                        spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                    }
+                    else
+                    {
+                        spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                    }
+                }
+            }
+
+            if (minimumUsageSize.HasValue)
+            {
+                Vector3 sizeDifference = new Vector3(minimumUsageSize.Value.x - spriteSize.x,
+                    minimumUsageSize.Value.y - spriteSize.y, 0);
+
+                float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
+
+
+                if (Mathf.Abs(differenceMagnitude) > 0.25f)
+                {
+                    if (minimumUsageSize.Value.sqrMagnitude < spriteSize.sqrMagnitude)
+                    {
+                        spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                    }
+                    else
+                    {
+                        spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                    }
+                }
+            }
         }
 
         private SpriteUseData GetOrCreateSpriteUsageData(int instanceID, string usagePath)

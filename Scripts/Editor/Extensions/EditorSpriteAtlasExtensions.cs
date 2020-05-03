@@ -61,7 +61,9 @@ namespace UnityEngine.U2D
                 }
                 else if (packable is Sprite sprite)
                 {
-                    resultSprites.Add(sprite);
+                    string path = AssetDatabase.GetAssetPath(sprite);
+                    resultSprites.AddRange(AssetDatabase.LoadAllAssetsAtPath(path).Where(o => o is Sprite)
+                        .Cast<Sprite>().ToArray());
                 }
             }
 

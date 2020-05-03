@@ -10,29 +10,25 @@ namespace BrunoMikoski.SpriteAuditor
     {
         private float allowedSizeVariation = 0.25f;
         
-        public abstract void GenerateResults(SpriteDatabase spriteDatabase);
+        public abstract void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter);
 
         public abstract void DrawResults(SpriteDatabase spriteDatabase);
 
-        protected virtual void DrawSpriteDataField(SpriteData spriteData, SpriteDrawDetails drawDetails)
+        protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
             EditorGUILayout.BeginVertical("Box");
             if (EditorGUIHelpers.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name,
-                !drawDetails.HasFlag(SpriteDrawDetails.None)))
+                true))
             {
                 EditorGUI.indentLevel++;
 
-                if (drawDetails.HasFlag(SpriteDrawDetails.UsageCount))
-                    DrawSpriteUsageCount(spriteData);
+                DrawSpriteUsageCount(spriteData);
 
-                if (drawDetails.HasFlag(SpriteDrawDetails.SizeDetails))
-                    DrawSpriteSizeDetails(spriteData);
+                DrawSpriteSizeDetails(spriteData);
 
-                if (drawDetails.HasFlag(SpriteDrawDetails.ReferencesPath))
-                    DrawSpriteReferencesPath(spriteData);
+                DrawSpriteReferencesPath(spriteData);
 
-                if (drawDetails.HasFlag(SpriteDrawDetails.SceneReferences))
-                    DrawSpriteSceneReferences(spriteData);
+                DrawSpriteSceneReferences(spriteData);
                 EditorGUI.indentLevel--;
             }
             EditorGUILayout.EndVertical();
@@ -86,26 +82,27 @@ namespace BrunoMikoski.SpriteAuditor
 
             EditorGUILayout.LabelField("Instances", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            Vector3 minUseSize = spriteData.MinimumUsageSize;
-            if (minUseSize != Vector3.zero)
+
+            if (spriteData.MinimumUsageSize.HasValue)
             {
-                EditorGUILayout.LabelField(
-                    $"Min: {Mathf.RoundToInt(minUseSize.x)} Height: {Mathf.RoundToInt(minUseSize.y)}");
+                Vector3 minUseSize = spriteData.MinimumUsageSize.Value;
+                if (minUseSize != Vector3.zero)
+                {
+                    EditorGUILayout.LabelField(
+                        $"Min: {Mathf.RoundToInt(minUseSize.x)} Height: {Mathf.RoundToInt(minUseSize.y)}");
+                }
             }
 
-            Vector3 maxUseSize = spriteData.MaximumUsageSize;
-            if (maxUseSize != Vector3.zero)
+            if (spriteData.MaximumUsageSize.HasValue)
             {
-                EditorGUILayout.LabelField(
-                    $"Max: {Mathf.RoundToInt(maxUseSize.x)} Height: {Mathf.RoundToInt(maxUseSize.y)}");
-            }    
-
-            Vector3 avgUseSize = spriteData.AverageUsageSize;
-            if (avgUseSize != Vector3.zero)
-            {
-                EditorGUILayout.LabelField(
-                    $"Average: {Mathf.RoundToInt(avgUseSize.x)} Height: {Mathf.RoundToInt(avgUseSize.y)}");
+                Vector3 maxUseSize = spriteData.MaximumUsageSize.Value;
+                if (maxUseSize != Vector3.zero)
+                {
+                    EditorGUILayout.LabelField(
+                        $"Max: {Mathf.RoundToInt(maxUseSize.x)} Height: {Mathf.RoundToInt(maxUseSize.y)}");
+                }    
             }
+
             EditorGUI.indentLevel--;
 
 
