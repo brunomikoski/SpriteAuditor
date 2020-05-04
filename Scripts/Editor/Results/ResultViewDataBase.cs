@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.Sprites;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -37,42 +38,41 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawWarnings(SpriteData spriteData)
         {
+            
             EditorGUILayout.LabelField("Warnings", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            
-            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+
+            if (SpriteAuditorUtility.CanFixSpriteData(spriteData))
             {
-                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude / spriteData.Sprite.rect.size.magnitude;
+                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                {
+                    float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                                spriteData.Sprite.rect.size.magnitude;
 
-                EditorGUILayout.HelpBox(
-                    $"Sprite is used {differenceMagnitude:P} bigger than original Sprite, you may scale it up",
-                    MessageType.Warning, false);
-
-                if (GUILayout.Button("Set best size for texture"))
-                    Debug.Log("Bla");
-            }
-
-            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
-            {
-                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude / spriteData.Sprite.rect.size.magnitude;
-
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(new GUIContent($"Sprite is used {differenceMagnitude:P} smaller than original Sprite, you may scale it down",
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(new GUIContent(
+                        $"Sprite is used {differenceMagnitude:P} bigger than original Sprite, you may scale it up",
                         EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
-                GUIStyle button = new GUIStyle(EditorStyles.miniButton)
-                {
-                    fixedWidth = 200
-                };
-                    
-                if (GUILayout.Button("Fix texture Size", button))
-                {
-                    
-                }
-                EditorGUILayout.EndHorizontal();
-                //
-                // if (GUILayout.Button(, EditorStyles.miniButtonRight))
-                //     Debug.Log("Bla");
 
+
+                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                {
+                    float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                                spriteData.Sprite.rect.size.magnitude;
+
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(new GUIContent(
+                        $"Sprite is used {1.0f - differenceMagnitude:P} smaller than original Sprite, you may scale it down",
+                        EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+
+
+                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                    EditorGUILayout.EndHorizontal();
+                }
             }
             EditorGUI.indentLevel--;
         }

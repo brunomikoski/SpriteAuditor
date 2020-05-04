@@ -34,6 +34,7 @@ namespace BrunoMikoski.SpriteAuditor
         
         [SerializeField]
         private string spriteTexturePath;
+        public string SpriteTexturePath => spriteTexturePath;
 
         [SerializeField] 
         private List<SpriteUseData> usages = new List<SpriteUseData>();
@@ -68,9 +69,6 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField] 
         private float atlasScale = 1;
 
-        [SerializeField]
-        private SpriteImportMode spriteImporterMode;
-        
         private Sprite cachedSprite;
         public Sprite Sprite
         {
@@ -112,7 +110,19 @@ namespace BrunoMikoski.SpriteAuditor
                 return cachedSpriteAtlas;
             }
         }
-        
+
+        private TextureImporter cachedTextureImporter;
+        public TextureImporter TextureImporter
+        {
+            get
+            {
+                if (cachedTextureImporter == null)
+                    cachedTextureImporter = AssetImporter.GetAtPath(spriteTexturePath) as TextureImporter;
+
+                return cachedTextureImporter;
+            }
+        }
+
 
         public SpriteData(Sprite targetSprite)
         {
@@ -133,11 +143,6 @@ namespace BrunoMikoski.SpriteAuditor
                 spriteAtlasGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(spriteAtlas));
                 atlasScale = AtlasCacheUtility.GetAtlasScale(spriteAtlas);
             }
-
-            TextureImporter spriteImporter = AssetImporter.GetAtPath(spriteTexturePath) as TextureImporter;
-
-            if (spriteImporter != null)
-                spriteImporterMode = spriteImporter.spriteImportMode;
         }
 
         public bool IsValid(ResultsFilter currentFilter)
@@ -175,13 +180,13 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (currentFilter.HasFlag(ResultsFilter.SingleSprites))
             {
-                if (spriteImporterMode == SpriteImportMode.Single)
+                if (TextureImporter.spriteImportMode == SpriteImportMode.Single)
                     return true;
             }
             
             if (currentFilter.HasFlag(ResultsFilter.MultipleSprites))
             {
-                if (spriteImporterMode == SpriteImportMode.Multiple)
+                if (TextureImporter.spriteImportMode == SpriteImportMode.Multiple)
                     return true;
             }
             
@@ -277,7 +282,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        private void CheckForSizeFlags()
+        public void CheckForSizeFlags()
         {
             Vector2 spriteSize = Sprite.rect.size;
             if (maximumUsageSize.HasValue)
@@ -290,11 +295,13 @@ namespace BrunoMikoski.SpriteAuditor
                 {
                     if (maximumUsageSize.Value.sqrMagnitude > spriteSize.sqrMagnitude)
                     {
-                        spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                        if (SpriteAuditorUtility.CanFixSpriteData(this))
+                            spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
                     }
                     else
                     {
-                        spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                        if (SpriteAuditorUtility.CanFixSpriteData(this))
+                            spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
                     }
                 }
             }
