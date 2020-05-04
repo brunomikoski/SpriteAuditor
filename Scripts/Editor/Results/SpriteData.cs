@@ -63,6 +63,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         [SerializeField] 
         private SpriteUsageFlags spriteUsageFlags;
+        public SpriteUsageFlags SpriteUsageFlags => spriteUsageFlags;
 
         [SerializeField] 
         private float atlasScale = 1;
@@ -171,7 +172,6 @@ namespace BrunoMikoski.SpriteAuditor
                 if (spriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
                     return true;
             }
-
 
             if (currentFilter.HasFlag(ResultsFilter.SingleSprites))
             {

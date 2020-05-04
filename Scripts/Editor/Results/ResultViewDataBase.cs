@@ -17,8 +17,7 @@ namespace BrunoMikoski.SpriteAuditor
         protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
             EditorGUILayout.BeginVertical("Box");
-            if (EditorGUIHelpers.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name,
-                true))
+            if (EditorGUIHelpers.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name))
             {
                 EditorGUI.indentLevel++;
 
@@ -29,9 +28,53 @@ namespace BrunoMikoski.SpriteAuditor
                 DrawSpriteReferencesPath(spriteData);
 
                 DrawSpriteSceneReferences(spriteData);
+
+                DrawWarnings(spriteData);
                 EditorGUI.indentLevel--;
             }
             EditorGUILayout.EndVertical();
+        }
+
+        private void DrawWarnings(SpriteData spriteData)
+        {
+            EditorGUILayout.LabelField("Warnings", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            
+            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+            {
+                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude / spriteData.Sprite.rect.size.magnitude;
+
+                EditorGUILayout.HelpBox(
+                    $"Sprite is used {differenceMagnitude:P} bigger than original Sprite, you may scale it up",
+                    MessageType.Warning, false);
+
+                if (GUILayout.Button("Set best size for texture"))
+                    Debug.Log("Bla");
+            }
+
+            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+            {
+                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude / spriteData.Sprite.rect.size.magnitude;
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(new GUIContent($"Sprite is used {differenceMagnitude:P} smaller than original Sprite, you may scale it down",
+                        EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+                GUIStyle button = new GUIStyle(EditorStyles.miniButton)
+                {
+                    fixedWidth = 200
+                };
+                    
+                if (GUILayout.Button("Fix texture Size", button))
+                {
+                    
+                }
+                EditorGUILayout.EndHorizontal();
+                //
+                // if (GUILayout.Button(, EditorStyles.miniButtonRight))
+                //     Debug.Log("Bla");
+
+            }
+            EditorGUI.indentLevel--;
         }
 
         protected void DrawSpriteSceneReferences(SpriteData spriteData)
