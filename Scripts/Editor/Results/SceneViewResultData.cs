@@ -1,16 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.U2D;
 
 namespace BrunoMikoski.SpriteAuditor
 {
     public sealed class SceneViewResultData : ResultViewDataBase
     {
-        private SceneAsset[] sceneAssets;
+        private SceneAsset[] uniqueUsedScenes;
 
         private readonly Dictionary<SceneAsset, SpriteData[]> sceneToSingleSprites = new Dictionary<SceneAsset, SpriteData[]>();
-        private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
+
+        private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites
+            = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
+        
         private bool hasResults;
 
         public override void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter)
@@ -18,7 +22,7 @@ namespace BrunoMikoski.SpriteAuditor
             //This method is kinda of dumb doing a lot of repetitive task, but its just easier to read this way
             HashSet<SceneAsset> usedScenes = new HashSet<SceneAsset>();
 
-            SpriteData[] validSprites = spriteDatabase.GetValidSprites(currentFilter);
+            SpriteData[] validSprites = spriteDatabase.GetFilteredSprites(currentFilter);
             
             for (int i = 0; i < validSprites.Length; i++)
             {
@@ -30,14 +34,10 @@ namespace BrunoMikoski.SpriteAuditor
                     usedScenes.Add(uniqueScene);
                 }
             }
-
-            sceneAssets = usedScenes.ToArray();
-
             
             sceneToSingleSprites.Clear();
-            for (int i = 0; i < sceneAssets.Length; i++)
+            foreach (SceneAsset sceneAsset in usedScenes)
             {
-                SceneAsset sceneAsset = sceneAssets[i];
                 sceneToSingleSprites.Add(sceneAsset, validSprites
                     .Where(spriteData => !spriteData.IsInsideAtlas())
                     .Where(spriteData => spriteData.SceneAssets.Contains(sceneAsset)).Distinct().ToArray());
@@ -61,7 +61,37 @@ namespace BrunoMikoski.SpriteAuditor
                     sceneToAtlasToUsedSprites[sceneAsset][spriteAtlas].Add(spriteData);
                 }
             }
+            
+            sceneToSingleSprites.Add(SpriteAuditorUtility.DontDestroyOnLoadSceneAsset, validSprites
+                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene) 
+                               && !data.IsInsideAtlas()).Distinct().ToArray());
+            
+            sceneToAtlasToUsedSprites.Add(SpriteAuditorUtility.DontDestroyOnLoadSceneAsset, new Dictionary<SpriteAtlas, HashSet<SpriteData>>());
 
+            IEnumerable<SpriteData> spritesInsideAtlas = validSprites
+                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene) &&
+                               data.IsInsideAtlas()).Distinct();
+
+            foreach (SpriteData spriteInsideAtlas in spritesInsideAtlas)
+            {
+                if (!sceneToAtlasToUsedSprites[SpriteAuditorUtility.DontDestroyOnLoadSceneAsset]
+                    .ContainsKey(spriteInsideAtlas.SpriteAtlas))
+                {
+                    sceneToAtlasToUsedSprites[SpriteAuditorUtility.DontDestroyOnLoadSceneAsset]
+                        .Add(spriteInsideAtlas.SpriteAtlas, new HashSet<SpriteData>());
+                }
+
+                sceneToAtlasToUsedSprites[SpriteAuditorUtility.DontDestroyOnLoadSceneAsset]
+                    [spriteInsideAtlas.SpriteAtlas].Add(spriteInsideAtlas);
+            }
+
+            if (sceneToSingleSprites[SpriteAuditorUtility.DontDestroyOnLoadSceneAsset].Length > 0
+                || sceneToAtlasToUsedSprites[SpriteAuditorUtility.DontDestroyOnLoadSceneAsset].Count > 0)
+            {
+                usedScenes.Add(SpriteAuditorUtility.DontDestroyOnLoadSceneAsset);
+            }
+
+            uniqueUsedScenes = usedScenes.ToArray();
             hasResults = true;
         }
 
@@ -70,20 +100,20 @@ namespace BrunoMikoski.SpriteAuditor
             if (!hasResults)
                 return;
             
-            for (int i = 0; i < sceneAssets.Length; i++)
+            for (int i = 0; i < uniqueUsedScenes.Length; i++)
             {
-                SceneAsset sceneAsset = sceneAssets[i];
+                SceneAsset sceneAsset = uniqueUsedScenes[i];
                 
                 EditorGUILayout.BeginVertical("Box");
 
-                if (EditorGUIHelpers.DrawObjectFoldout(sceneAsset, sceneAsset.name))
+                if (SpriteAuditorGUIUtility.DrawObjectFoldout(sceneAsset, sceneAsset.name))
                 {
                     EditorGUI.indentLevel++;
                     if (sceneToSingleSprites[sceneAsset].Length > 0)
                     {
                         EditorGUILayout.BeginVertical("Box");
                         
-                        if(EditorGUIHelpers.DrawStringFoldout($"Sprites Without Atlas [{sceneToSingleSprites[sceneAsset].Length}] ", $"{sceneAsset.name}_SceneViewSpritesWithoutAtlas"))
+                        if(SpriteAuditorGUIUtility.DrawStringFoldout($"Sprites Without Atlas [{sceneToSingleSprites[sceneAsset].Length}] ", $"{sceneAsset.name}_SceneViewSpritesWithoutAtlas"))
                         {
                             EditorGUI.indentLevel++;
                             foreach (SpriteData spriteData in sceneToSingleSprites[sceneAsset])
@@ -103,7 +133,7 @@ namespace BrunoMikoski.SpriteAuditor
                         {
                             EditorGUILayout.BeginVertical("Box");
 
-                            if (EditorGUIHelpers.DrawObjectFoldout(atlasToUSedSprites.Key,
+                            if (SpriteAuditorGUIUtility.DrawObjectFoldout(atlasToUSedSprites.Key,
                                 $"{VisualizationType.Scene.ToString()}_{atlasToUSedSprites.Key}"))
                             {
                                 EditorGUI.indentLevel++;
@@ -122,7 +152,6 @@ namespace BrunoMikoski.SpriteAuditor
 
                     EditorGUI.indentLevel--;
                 }
-
                 EditorGUILayout.EndVertical();
             }
         }

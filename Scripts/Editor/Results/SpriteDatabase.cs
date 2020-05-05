@@ -19,9 +19,9 @@ namespace BrunoMikoski.SpriteAuditor
             SetVisualizationType(visualizationType);
         }
 
-        public SpriteData[] GetValidSprites(ResultsFilter currentFilter)
+        public SpriteData[] GetFilteredSprites(ResultsFilter currentFilter)
         {
-            return spritesData.Where(data => data.IsValid(currentFilter)).OrderBy(data => data.Sprite.name).ToArray();
+            return spritesData.Where(data => data.Match(currentFilter)).OrderBy(data => data.Sprite.name).ToArray();
         }
 
         public void ReportButton(Button button)

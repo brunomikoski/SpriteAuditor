@@ -6,11 +6,10 @@ namespace BrunoMikoski.SpriteAuditor
     public enum ResultsFilter
     {
         SizeWarnings = 1 << 0,
-        UsedOnDontDestroyOnLoadScenes = 1 << 1,
-        UsedOnlyOnOneScenes = 1 << 2,
-        UnableToDetectAllSizes = 1 << 3,
-        SingleSprites = 1 << 4,
-        MultipleSprites = 1 << 5,
-        InsideAtlasSprites = 1 << 6,
+        UsedOnlyOnOneScenes = 1 << 1,
+        UnableToDetectAllSizes = 1 << 2,
+        SingleSprites = 1 << 3,
+        MultipleSprites = 1 << 4,
+        InsideAtlasSprites = 1 << 5,
     }
 }

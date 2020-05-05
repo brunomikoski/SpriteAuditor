@@ -1,4 +1,5 @@
 ﻿using System;
+using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.Sprites;
@@ -9,8 +10,6 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public abstract class ResultViewDataBase
     {
-        private float allowedSizeVariation = 0.25f;
-        
         public abstract void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter);
 
         public abstract void DrawResults(SpriteDatabase spriteDatabase);
@@ -18,7 +17,7 @@ namespace BrunoMikoski.SpriteAuditor
         protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
             EditorGUILayout.BeginVertical("Box");
-            if (EditorGUIHelpers.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name))
+            if (SpriteAuditorGUIUtility.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name))
             {
                 EditorGUI.indentLevel++;
 
@@ -42,37 +41,35 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.LabelField("Warnings", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            if (SpriteAuditorUtility.CanFixSpriteData(spriteData))
+            EditorGUILayout.LabelField(spriteData.SpriteUsageFlags.ToString());
+            
+            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
             {
-                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
-                {
-                    float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
-                                                spriteData.Sprite.rect.size.magnitude;
+                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                            spriteData.Sprite.rect.size.magnitude;
 
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(new GUIContent(
-                        $"Sprite is used {differenceMagnitude:P} bigger than original Sprite, you may scale it up",
-                        EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(new GUIContent(
+                    $"Sprite is used {Mathf.Abs(1.0f-differenceMagnitude):P} bigger than original Sprite, you may scale it up",
+                    EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
 
+                SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                EditorGUILayout.EndHorizontal();
+            }
 
-                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
-                    EditorGUILayout.EndHorizontal();
-                }
+            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+            {
+                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                            spriteData.Sprite.rect.size.magnitude;
 
-                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
-                {
-                    float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
-                                                spriteData.Sprite.rect.size.magnitude;
-
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(new GUIContent(
-                        $"Sprite is used {1.0f - differenceMagnitude:P} smaller than original Sprite, you may scale it down",
-                        EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(new GUIContent(
+                    $"Sprite is used {Mathf.Abs(1.0f - differenceMagnitude):P} smaller than original Sprite, you may scale it down",
+                    EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
 
 
-                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
-                    EditorGUILayout.EndHorizontal();
-                }
+                SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                EditorGUILayout.EndHorizontal();
             }
             EditorGUI.indentLevel--;
         }
@@ -126,16 +123,6 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.LabelField("Instances", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            if (spriteData.MinimumUsageSize.HasValue)
-            {
-                Vector3 minUseSize = spriteData.MinimumUsageSize.Value;
-                if (minUseSize != Vector3.zero)
-                {
-                    EditorGUILayout.LabelField(
-                        $"Min: {Mathf.RoundToInt(minUseSize.x)} Height: {Mathf.RoundToInt(minUseSize.y)}");
-                }
-            }
-
             if (spriteData.MaximumUsageSize.HasValue)
             {
                 Vector3 maxUseSize = spriteData.MaximumUsageSize.Value;
@@ -147,7 +134,6 @@ namespace BrunoMikoski.SpriteAuditor
             }
 
             EditorGUI.indentLevel--;
-
 
             Vector2 spriteSize = spriteData.SpriteSize;
             EditorGUILayout.LabelField(
@@ -192,7 +178,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void SetAllowedSizeVariation(float spriteUsageSizeThreshold)
         {
-            allowedSizeVariation = spriteUsageSizeThreshold;
+            //TODO
         }
     }
 }

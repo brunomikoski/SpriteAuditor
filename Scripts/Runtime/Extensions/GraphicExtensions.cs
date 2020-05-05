@@ -2,8 +2,11 @@
 {
     public static partial class GraphicExtensions
     {
-        public static Vector3 GetPixelSize(this Graphic graphic)
+        public static Vector3? GetPixelSize(this Graphic graphic)
         {
+            if (!graphic.isActiveAndEnabled)
+                return null;
+            
             Canvas componentInParent = graphic.GetComponentInParent<Canvas>();
             if (componentInParent != null)
             {
@@ -13,8 +16,7 @@
                 return bounds.size;
             }
 
-            return Vector3.zero;
+            return null;
         }
-        
-    }
+   }
 }

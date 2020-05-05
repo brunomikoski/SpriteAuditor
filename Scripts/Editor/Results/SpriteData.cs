@@ -25,10 +25,6 @@ namespace BrunoMikoski.SpriteAuditor
         private string spriteName;
 
         [SerializeField] 
-        private Vector3? minimumUsageSize = null;
-        public Vector3? MinimumUsageSize => minimumUsageSize;
-
-        [SerializeField] 
         private Vector3? maximumUsageSize = null;
         public Vector3? MaximumUsageSize => maximumUsageSize;
         
@@ -145,7 +141,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        public bool IsValid(ResultsFilter currentFilter)
+        public bool Match(ResultsFilter currentFilter)
         {
             if (spriteUsageFlags.HasFlag(SpriteUsageFlags.DefaultUnityAsset))
                 return false;
@@ -157,12 +153,6 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect)
                     || spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
-                    return true;
-            }
-            
-            if (currentFilter.HasFlag(ResultsFilter.UsedOnDontDestroyOnLoadScenes))
-            {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene))
                     return true;
             }
             
@@ -207,13 +197,8 @@ namespace BrunoMikoski.SpriteAuditor
             ReportScene(instanceScene);
             spriteUsageData.ReportPath(usagePath, instanceScene);
 
-            if (!size.HasValue)
-            {
-                spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryAllUsageSize;
-                return;
-            }
 
-            ReportSize(size.Value);
+            ReportSize(size);
         }
 
         private void ReportScene(Scene scene)
@@ -222,17 +207,6 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 if (scene.buildIndex == -1)
                     spriteUsageFlags |= SpriteUsageFlags.UsedOnDontDestroyOnLoadScene;
-                
-                for (int i = 0; i < SceneManager.sceneCount; i++)
-                {
-                    Scene openScene = SceneManager.GetSceneAt(i);
-                    if (!openScene.isLoaded)
-                        continue;
-                    if (!openScene.IsValid())
-                        continue;
-
-                    scenesPath.Add(openScene.path);
-                }
             }
             else
             {
@@ -267,63 +241,42 @@ namespace BrunoMikoski.SpriteAuditor
             ReportUse(image.gameObject, size);
         }
 
-        private void ReportSize(Vector3 size)
+        private void ReportSize(Vector3? size)
         {
-            if (!maximumUsageSize.HasValue || size.sqrMagnitude > maximumUsageSize.Value.sqrMagnitude)
+            if (!size.HasValue)
+            {
+                spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryAllUsageSize;
+                return;
+            }
+            
+            if (!maximumUsageSize.HasValue || size.Value.sqrMagnitude > maximumUsageSize.Value.sqrMagnitude)
             {
                 maximumUsageSize = size;
-                CheckForSizeFlags();
-            }
-
-            if (!minimumUsageSize.HasValue || size.sqrMagnitude < minimumUsageSize.Value.sqrMagnitude)
-            {
-                minimumUsageSize = size;
                 CheckForSizeFlags();
             }
         }
 
         public void CheckForSizeFlags()
         {
+            if (!maximumUsageSize.HasValue) 
+                return;
+            
             Vector2 spriteSize = Sprite.rect.size;
-            if (maximumUsageSize.HasValue)
-            {
-                Vector3 sizeDifference = new Vector3(maximumUsageSize.Value.x - spriteSize.x,
-                    maximumUsageSize.Value.y - spriteSize.y, 0);
+            Vector3 sizeDifference = new Vector3(maximumUsageSize.Value.x - spriteSize.x,
+                maximumUsageSize.Value.y - spriteSize.y, 0);
 
-                float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
-                if (Mathf.Abs(differenceMagnitude) > 0.25f)
+            float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
+            if (Mathf.Abs(differenceMagnitude) > 0.25f)
+            {
+                if (maximumUsageSize.Value.sqrMagnitude > spriteSize.sqrMagnitude)
                 {
-                    if (maximumUsageSize.Value.sqrMagnitude > spriteSize.sqrMagnitude)
-                    {
-                        if (SpriteAuditorUtility.CanFixSpriteData(this))
-                            spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
-                    }
-                    else
-                    {
-                        if (SpriteAuditorUtility.CanFixSpriteData(this))
-                            spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
-                    }
+                    spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                    spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
                 }
-            }
-
-            if (minimumUsageSize.HasValue)
-            {
-                Vector3 sizeDifference = new Vector3(minimumUsageSize.Value.x - spriteSize.x,
-                    minimumUsageSize.Value.y - spriteSize.y, 0);
-
-                float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
-
-
-                if (Mathf.Abs(differenceMagnitude) > 0.25f)
+                else
                 {
-                    if (minimumUsageSize.Value.sqrMagnitude < spriteSize.sqrMagnitude)
-                    {
-                        spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
-                    }
-                    else
-                    {
-                        spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
-                    }
+                    spriteUsageFlags &= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                    spriteUsageFlags |= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
                 }
             }
         }

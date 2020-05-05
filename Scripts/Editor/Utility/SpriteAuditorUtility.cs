@@ -7,6 +7,25 @@ namespace BrunoMikoski.SpriteAuditor
     {
         private static int[] AVAILABLE_SPRITE_SIZES = {32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
 
+        private static SceneAsset cachedDontDestroyOnLoadSceneAsset;
+        public static SceneAsset DontDestroyOnLoadSceneAsset
+        {
+            get
+            {
+                if (cachedDontDestroyOnLoadSceneAsset == null)
+                {
+                    string[] guids = AssetDatabase.FindAssets("t:SceneAsset DontDestroyOnLoad");
+                    if (guids.Length > 0)
+                    {
+                        cachedDontDestroyOnLoadSceneAsset =
+                            AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(guids[0]));
+                    }
+                }
+                
+                return cachedDontDestroyOnLoadSceneAsset;
+            }
+        }
+        
         public static void SetBestSizeForTexture(SpriteData spriteData)
         {
             TryFindSmallerSizeTexture(spriteData, out int smallerSize);
