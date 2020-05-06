@@ -59,9 +59,9 @@ namespace UnityEngine.U2D
                     List<Sprite> sprites = GetAllSpritesFromFolder(AssetDatabase.GetAssetPath(defaultAsset));
                     resultSprites.AddRange(sprites);
                 }
-                else if (packable is Sprite sprite)
+                else if (packable is Sprite || packable is Texture2D)
                 {
-                    string path = AssetDatabase.GetAssetPath(sprite);
+                    string path = AssetDatabase.GetAssetPath(packable);
                     resultSprites.AddRange(AssetDatabase.LoadAllAssetsAtPath(path).Where(o => o is Sprite)
                         .Cast<Sprite>().ToArray());
                 }

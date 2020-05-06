@@ -9,7 +9,7 @@ namespace BrunoMikoski.SpriteAuditor
         UsedSmallerThanSpriteRect = 1 << 1,
         CantDiscoveryAllUsageSize = 1 << 2, // When for some reason cannot detect the size this image is used
         DefaultUnityAsset = 1 << 3,
-        UsedOnDontDestroyOnLoadScene = 1 << 4,
+        UsedOnDontDestroyOrUnknowScene = 1 << 4,
         UsingScaledAtlasSize = 1 << 5
     }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
-using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEditor.Sprites;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -50,11 +48,13 @@ namespace BrunoMikoski.SpriteAuditor
                 EditorGUILayout.LabelField(new GUIContent(
                     $"Cannot detect all sprite usages sizes!", SpriteAuditorGUIUtility.WarningIcon));
             }
+
+            float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                        spriteData.SpriteSize.magnitude;
             
             if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
             {
-                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
-                                            spriteData.Sprite.rect.size.magnitude;
+                
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent(
@@ -67,9 +67,6 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
             {
-                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
-                                            spriteData.Sprite.rect.size.magnitude;
-
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent(
                     $"Sprite is used {Mathf.Abs(1.0f - differenceMagnitude):P} smaller than original Sprite, you may scale it down",

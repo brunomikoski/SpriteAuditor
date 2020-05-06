@@ -63,13 +63,13 @@ namespace BrunoMikoski.SpriteAuditor
             }
             
             sceneToSingleSprites.Add(SpriteAuditorUtility.DontDestroyOnLoadSceneAsset, validSprites
-                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene) 
+                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOrUnknowScene) 
                                && !data.IsInsideAtlas()).Distinct().ToArray());
             
             sceneToAtlasToUsedSprites.Add(SpriteAuditorUtility.DontDestroyOnLoadSceneAsset, new Dictionary<SpriteAtlas, HashSet<SpriteData>>());
 
             IEnumerable<SpriteData> spritesInsideAtlas = validSprites
-                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene) &&
+                .Where(data => data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOrUnknowScene) &&
                                data.IsInsideAtlas()).Distinct();
 
             foreach (SpriteData spriteInsideAtlas in spritesInsideAtlas)

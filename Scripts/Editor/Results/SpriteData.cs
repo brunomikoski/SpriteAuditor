@@ -217,14 +217,9 @@ namespace BrunoMikoski.SpriteAuditor
         private void ReportScene(Scene scene)
         {
             if (scene.buildIndex == -1 || string.IsNullOrEmpty(scene.path))
-            {
-                if (scene.buildIndex == -1)
-                    spriteUsageFlags |= SpriteUsageFlags.UsedOnDontDestroyOnLoadScene;
-            }
+                spriteUsageFlags |= SpriteUsageFlags.UsedOnDontDestroyOrUnknowScene;
             else
-            {
                 scenesPath.Add(scene.path);
-            }
         }
 
         public void ReportUse(SpriteRenderer spriteRenderer)
@@ -338,7 +333,7 @@ namespace BrunoMikoski.SpriteAuditor
             if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
                 return true;
             
-            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene))
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOrUnknowScene))
                 return true;
 
             return false;
