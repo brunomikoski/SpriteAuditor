@@ -9,6 +9,17 @@ namespace BrunoMikoski.SpriteAuditor
     {
         private static Dictionary<string, bool> keyToFoldout = new Dictionary<string, bool>();
 
+        private static Texture2D cachedWarningIcon;
+        public static Texture2D WarningIcon
+        {
+            get
+            {
+                if (cachedWarningIcon == null)
+                    cachedWarningIcon = EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D;
+                return cachedWarningIcon;
+            }
+        }
+
         public static void DrawFixSpriteSize(SpriteData spriteData)
         {
             if (!SpriteAuditorUtility.CanFixSpriteData(spriteData))

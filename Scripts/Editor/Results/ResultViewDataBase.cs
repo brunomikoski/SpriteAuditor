@@ -38,10 +38,19 @@ namespace BrunoMikoski.SpriteAuditor
         private void DrawWarnings(SpriteData spriteData)
         {
             
+            if(!spriteData.HasWarnings())
+                return;
+            
             EditorGUILayout.LabelField("Warnings", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
             EditorGUILayout.LabelField(spriteData.SpriteUsageFlags.ToString());
+
+            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
+            {
+                EditorGUILayout.LabelField(new GUIContent(
+                    $"Cannot detect all sprite usages!", SpriteAuditorGUIUtility.WarningIcon));
+            }
             
             if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
             {
@@ -51,7 +60,7 @@ namespace BrunoMikoski.SpriteAuditor
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent(
                     $"Sprite is used {Mathf.Abs(1.0f-differenceMagnitude):P} bigger than original Sprite, you may scale it up",
-                    EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+                    SpriteAuditorGUIUtility.WarningIcon));
 
                 SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
                 EditorGUILayout.EndHorizontal();
@@ -65,7 +74,7 @@ namespace BrunoMikoski.SpriteAuditor
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent(
                     $"Sprite is used {Mathf.Abs(1.0f - differenceMagnitude):P} smaller than original Sprite, you may scale it down",
-                    EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D));
+                    SpriteAuditorGUIUtility.WarningIcon));
 
 
                 SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);

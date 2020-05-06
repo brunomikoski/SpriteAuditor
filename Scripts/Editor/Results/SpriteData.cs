@@ -311,5 +311,22 @@ namespace BrunoMikoski.SpriteAuditor
         {
             return SpriteAtlas != null;
         }
+
+        public bool HasWarnings()
+        {
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
+                return true;
+            
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                return true;
+
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                return true;
+            
+            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedOnDontDestroyOnLoadScene))
+                return true;
+
+            return false;
+            }
     }
 }
