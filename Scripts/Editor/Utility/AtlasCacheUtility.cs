@@ -67,14 +67,13 @@ namespace BrunoMikoski.SpriteAuditor
             return false;
         }
 
-        public static float GetAtlasScale(SpriteAtlas spriteAtlas)
+        public static bool TryGetAtlasScale(SpriteAtlas spriteAtlas, out float atlasScale)
         {
             if (!hasDataCached)
                 CacheKnowAtlases();
-            
-            if (atlasToScale.TryGetValue(spriteAtlas, out float scale))
-                return scale;
-            return 1;
+
+            atlasScale = 1;
+            return atlasToScale.TryGetValue(spriteAtlas, out atlasScale); 
         }
     }
 }

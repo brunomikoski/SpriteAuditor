@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BrunoMikoski.SpriteAuditor.Utils;
 using UnityEditor;
+using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
@@ -137,7 +138,8 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 cachedSpriteAtlas = spriteAtlas;
                 spriteAtlasGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(spriteAtlas));
-                atlasScale = AtlasCacheUtility.GetAtlasScale(spriteAtlas);
+                if (AtlasCacheUtility.TryGetAtlasScale(spriteAtlas, out atlasScale))
+                    spriteUsageFlags |= SpriteUsageFlags.UsingScaledAtlasSize;
             }
         }
 
@@ -149,10 +151,15 @@ namespace BrunoMikoski.SpriteAuditor
             if (Sprite == null)
                 return false;
 
-            if (currentFilter.HasFlag(ResultsFilter.SizeWarnings))
+            if (currentFilter.HasFlag(ResultsFilter.UsedSmallerThanSpriteSize))
             {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect)
-                    || spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(ResultsFilter.UsedBiggerThanSpriteSize))
+            {
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
                     return true;
             }
             
@@ -183,6 +190,12 @@ namespace BrunoMikoski.SpriteAuditor
             if (currentFilter.HasFlag(ResultsFilter.InsideAtlasSprites))
             {
                 if(IsInsideAtlas())
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(ResultsFilter.InsideScaledAtlasVariant))
+            {
+                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsingScaledAtlasSize))
                     return true;
             }
 
@@ -261,25 +274,27 @@ namespace BrunoMikoski.SpriteAuditor
             if (!maximumUsageSize.HasValue) 
                 return;
             
-            Vector2 spriteSize = Sprite.rect.size;
-            Vector3 sizeDifference = new Vector3(maximumUsageSize.Value.x - spriteSize.x,
-                maximumUsageSize.Value.y - spriteSize.y, 0);
+            spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
+            spriteUsageFlags &= ~SpriteUsageFlags.UsedBiggerThanSpriteRect;
 
-            float differenceMagnitude = sizeDifference.magnitude / spriteSize.magnitude;
+            Vector3 sizeDifference = new Vector3(maximumUsageSize.Value.x - SpriteSize.x,
+                maximumUsageSize.Value.y - SpriteSize.y, 0);
+
+            float differenceMagnitude = sizeDifference.magnitude / SpriteSize.magnitude;
             if (Mathf.Abs(differenceMagnitude) > 0.25f)
             {
-                if (maximumUsageSize.Value.sqrMagnitude > spriteSize.sqrMagnitude)
+                if (maximumUsageSize.Value.sqrMagnitude > SpriteSize.sqrMagnitude)
                 {
-                    spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
-                    spriteUsageFlags &= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                    if (SpriteAuditorUtility.CanTweakMaxSize(this))
+                        spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                    
                 }
                 else
                 {
-                    spriteUsageFlags &= SpriteUsageFlags.UsedBiggerThanSpriteRect;
-                    spriteUsageFlags |= ~SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                    if (SpriteAuditorUtility.CanTweakMaxSize(this))
+                        spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
                 }
-            }
-        }
+            }}
 
         private SpriteUseData GetOrCreateSpriteUsageData(int instanceID, string usagePath)
         {

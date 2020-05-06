@@ -37,7 +37,6 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawWarnings(SpriteData spriteData)
         {
-            
             if(!spriteData.HasWarnings())
                 return;
             
@@ -49,7 +48,7 @@ namespace BrunoMikoski.SpriteAuditor
             if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
             {
                 EditorGUILayout.LabelField(new GUIContent(
-                    $"Cannot detect all sprite usages!", SpriteAuditorGUIUtility.WarningIcon));
+                    $"Cannot detect all sprite usages sizes!", SpriteAuditorGUIUtility.WarningIcon));
             }
             
             if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))

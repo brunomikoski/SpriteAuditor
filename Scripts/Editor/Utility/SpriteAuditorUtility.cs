@@ -52,6 +52,12 @@ namespace BrunoMikoski.SpriteAuditor
                 if (size < maxSize)
                     continue;
 
+                if (spriteData.TextureImporter.maxTextureSize == size)
+                {
+                    smallerSize = -1;
+                    return false;
+                }
+                
                 smallerSize = size;
                 return true;
             }
@@ -72,6 +78,25 @@ namespace BrunoMikoski.SpriteAuditor
                 return false;
             
             return spriteData.TextureImporter.maxTextureSize != smallerSize;
+        }
+
+        public static bool CanTweakMaxSize(SpriteData spriteData)
+        {
+            if (!spriteData.MaximumUsageSize.HasValue)
+                return false;
+
+            int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));
+            for (int i = 0; i < AVAILABLE_SPRITE_SIZES.Length-1; i++)
+            {
+                int current = AVAILABLE_SPRITE_SIZES[i];
+                int next = AVAILABLE_SPRITE_SIZES[i + 1];
+
+                if (current > desired && desired <= next)
+                    return spriteData.TextureImporter.maxTextureSize != current;
+            }
+
+            return false;
+
         }
     }
 }
