@@ -7,6 +7,9 @@ namespace BrunoMikoski.SpriteAuditor
     {
         private static int[] AVAILABLE_SPRITE_SIZES = {32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
 
+        private static bool isReferencesDirty;
+        public static bool IsReferencesDirty => isReferencesDirty;
+
         private static SceneAsset cachedDontDestroyOnLoadSceneAsset;
         public static SceneAsset DontDestroyOnLoadSceneAsset
         {
@@ -25,7 +28,8 @@ namespace BrunoMikoski.SpriteAuditor
                 return cachedDontDestroyOnLoadSceneAsset;
             }
         }
-        
+
+
         public static void SetBestSizeForTexture(SpriteData spriteData)
         {
             TryFindSmallerSizeTexture(spriteData, out int smallerSize);
@@ -97,6 +101,16 @@ namespace BrunoMikoski.SpriteAuditor
 
             return false;
 
+        }
+
+        public static void SetResultViewDirty()
+        {
+            isReferencesDirty = true;
+        }
+        
+        public static void SetResultViewUpdated()
+        {
+            isReferencesDirty = false;
         }
     }
 }

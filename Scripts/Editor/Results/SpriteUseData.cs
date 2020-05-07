@@ -59,7 +59,8 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (paths.Count == 0)
                 firstPath = storagePath;
-            paths.Add(storagePath);
+            if (paths.Add(storagePath))
+                SpriteAuditorUtility.SetResultViewDirty();
         }
     }
 }

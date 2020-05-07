@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEngine;
 using UnityEngine.U2D;
 
 namespace BrunoMikoski.SpriteAuditor
 {
-    public sealed class SceneViewResultData : ResultViewDataBase
+    public sealed class SceneResultView : BaseResultView
     {
         private SceneAsset[] uniqueUsedScenes;
 
@@ -15,8 +14,6 @@ namespace BrunoMikoski.SpriteAuditor
         private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites
             = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
         
-        private bool hasResults;
-
         public override void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter)
         {
             //This method is kinda of dumb doing a lot of repetitive task, but its just easier to read this way
@@ -92,12 +89,11 @@ namespace BrunoMikoski.SpriteAuditor
             }
 
             uniqueUsedScenes = usedScenes.ToArray();
-            hasResults = true;
         }
 
         public override void DrawResults(SpriteDatabase spriteDatabase)
         {
-            if (!hasResults)
+            if (uniqueUsedScenes == null)
                 return;
             
             for (int i = 0; i < uniqueUsedScenes.Length; i++)

@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
-    public abstract class ResultViewDataBase
+    public abstract class BaseResultView
     {
         public abstract void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter);
 

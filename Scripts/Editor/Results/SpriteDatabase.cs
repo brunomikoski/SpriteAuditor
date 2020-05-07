@@ -11,13 +11,6 @@ namespace BrunoMikoski.SpriteAuditor
     {
         [SerializeField]
         private List<SpriteData> spritesData = new List<SpriteData>(512);
-        
-        private ResultViewDataBase result = null;
-        
-        public SpriteDatabase(VisualizationType visualizationType)
-        {
-            SetVisualizationType(visualizationType);
-        }
 
         public SpriteData[] GetFilteredSprites(ResultsFilter currentFilter)
         {
@@ -79,9 +72,7 @@ namespace BrunoMikoski.SpriteAuditor
                 return;
 
             Sprite sprite = image.sprite;
-
             SpriteData spriteData = GetOrCreateSpriteData(sprite);
-
             spriteData.ReportUse(image);
         }
 
@@ -92,6 +83,7 @@ namespace BrunoMikoski.SpriteAuditor
             
             spriteData = new SpriteData(sprite);
             spritesData.Add(spriteData);
+            SpriteAuditorUtility.SetResultViewDirty();
             return spriteData;
         }
 
@@ -112,33 +104,10 @@ namespace BrunoMikoski.SpriteAuditor
             return false;
         }
 
-        public void DrawResults()
+        public void PrepareForRun()
         {
-            result.DrawResults(this);
-        }
-
-        public void RefreshResults(ResultsFilter currentFilter)
-        {
-            result.GenerateResults(this, currentFilter);
-        }
-
-        public void SetAllowedSizeVariation(float spriteUsageSizeThreshold)
-        {
-            result.SetAllowedSizeVariation(spriteUsageSizeThreshold);
-        }
-
-        public void SetVisualizationType(VisualizationType visualizationType)
-        {
-            switch (visualizationType)
-            {
-                case VisualizationType.Scene:
-                    result = new SceneViewResultData();
-                    break;
-                case VisualizationType.Atlas:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(visualizationType), visualizationType, null);
-            }
+            for (int i = 0; i < spritesData.Count; i++)
+                spritesData[i].PrepareForRun();
         }
     }
 }

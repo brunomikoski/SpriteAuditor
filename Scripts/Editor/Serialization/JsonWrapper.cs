@@ -4,10 +4,10 @@ namespace BrunoMikoski.SpriteAuditor.Serialization
 {
     public static class JsonWrapper
     {
+        private static fsSerializer serializer = new fsSerializer();
+        
         public static string ToJson<T>(T target, bool pretty = true)
         {
-            fsSerializer serializer = new fsSerializer();
-
             fsData data;
             fsResult result = serializer.TrySerialize<T>(target, out data);
             if (!result.Failed)
@@ -29,9 +29,7 @@ namespace BrunoMikoski.SpriteAuditor.Serialization
         {
             if (string.IsNullOrEmpty(json))
                 return false;
-
-            fsSerializer serializer = new fsSerializer();
-
+            
             fsData data = fsJsonParser.Parse(json);
             fsResult result = serializer.TryDeserialize(data, ref instance);
 

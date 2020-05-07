@@ -18,30 +18,23 @@ namespace BrunoMikoski.SpriteAuditor
 
         [SerializeField] 
         private string spriteTextureGUID;
-
         [SerializeField] 
         private string spriteAtlasGUID;
-
         [SerializeField] 
         private string spriteName;
-
         [SerializeField] 
         private Vector3? maximumUsageSize = null;
         public Vector3? MaximumUsageSize => maximumUsageSize;
-        
         [SerializeField]
         private string spriteTexturePath;
         public string SpriteTexturePath => spriteTexturePath;
-
         [SerializeField] 
         private List<SpriteUseData> usages = new List<SpriteUseData>();
         public List<SpriteUseData> Usages => usages;
-
         [SerializeField] 
         private HashSet<string> scenesPath = new HashSet<string>();
-
+        
         private HashSet<SceneAsset> cachedSceneAssets = new HashSet<SceneAsset>();
-
         public HashSet<SceneAsset> SceneAssets
         {
             get
@@ -90,7 +83,6 @@ namespace BrunoMikoski.SpriteAuditor
         public Vector2 SpriteSize => Sprite.rect.size * atlasScale;
 
         private SpriteAtlas cachedSpriteAtlas;
-
         public SpriteAtlas SpriteAtlas
         {
             get
@@ -120,6 +112,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
+        private bool firstSizeReport = true;
 
         public SpriteData(Sprite targetSprite)
         {
@@ -209,8 +202,6 @@ namespace BrunoMikoski.SpriteAuditor
             Scene instanceScene = instance.scene;
             ReportScene(instanceScene);
             spriteUsageData.ReportPath(usagePath, instanceScene);
-
-
             ReportSize(size);
         }
 
@@ -219,7 +210,10 @@ namespace BrunoMikoski.SpriteAuditor
             if (scene.buildIndex == -1 || string.IsNullOrEmpty(scene.path))
                 spriteUsageFlags |= SpriteUsageFlags.UsedOnDontDestroyOrUnknowScene;
             else
-                scenesPath.Add(scene.path);
+            {
+                if (scenesPath.Add(scene.path))
+                    SpriteAuditorUtility.SetResultViewDirty();
+            }
         }
 
         public void ReportUse(SpriteRenderer spriteRenderer)
@@ -256,11 +250,14 @@ namespace BrunoMikoski.SpriteAuditor
                 spriteUsageFlags |= SpriteUsageFlags.CantDiscoveryAllUsageSize;
                 return;
             }
-            
-            if (!maximumUsageSize.HasValue || size.Value.sqrMagnitude > maximumUsageSize.Value.sqrMagnitude)
+
+            if (firstSizeReport || !maximumUsageSize.HasValue 
+                                || size.Value.sqrMagnitude > maximumUsageSize.Value.sqrMagnitude)
             {
                 maximumUsageSize = size;
                 CheckForSizeFlags();
+                firstSizeReport = false;
+                SpriteAuditorUtility.SetResultViewDirty();
             }
         }
 
@@ -281,13 +278,19 @@ namespace BrunoMikoski.SpriteAuditor
                 if (maximumUsageSize.Value.sqrMagnitude > SpriteSize.sqrMagnitude)
                 {
                     if (SpriteAuditorUtility.CanTweakMaxSize(this))
+                    {
                         spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
+                        SpriteAuditorUtility.SetResultViewDirty();
+                    }
                     
                 }
                 else
                 {
                     if (SpriteAuditorUtility.CanTweakMaxSize(this))
+                    {
                         spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
+                        SpriteAuditorUtility.SetResultViewDirty();
+                    }
                 }
             }}
 
@@ -298,6 +301,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             spriteUseData = new SpriteUseData(instanceID, usagePath);
             usages.Add(spriteUseData);
+            SpriteAuditorUtility.SetResultViewDirty();
             return spriteUseData;
         }
 
@@ -338,5 +342,10 @@ namespace BrunoMikoski.SpriteAuditor
 
             return false;
             }
+
+        public void PrepareForRun()
+        {
+            firstSizeReport = true;
+        }
     }
 }
