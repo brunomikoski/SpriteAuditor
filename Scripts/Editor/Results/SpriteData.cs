@@ -257,7 +257,6 @@ namespace BrunoMikoski.SpriteAuditor
                 maximumUsageSize = size;
                 CheckForSizeFlags();
                 firstSizeReport = false;
-                SpriteAuditorUtility.SetResultViewDirty();
             }
         }
 
@@ -280,7 +279,6 @@ namespace BrunoMikoski.SpriteAuditor
                     if (SpriteAuditorUtility.CanTweakMaxSize(this))
                     {
                         spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
-                        SpriteAuditorUtility.SetResultViewDirty();
                     }
                     
                 }
@@ -289,7 +287,6 @@ namespace BrunoMikoski.SpriteAuditor
                     if (SpriteAuditorUtility.CanTweakMaxSize(this))
                     {
                         spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
-                        SpriteAuditorUtility.SetResultViewDirty();
                     }
                 }
             }}

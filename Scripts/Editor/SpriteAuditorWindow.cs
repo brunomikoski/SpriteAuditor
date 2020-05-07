@@ -173,11 +173,6 @@ namespace BrunoMikoski.SpriteAuditor
             }
             
             ResultView.DrawResults(SpriteDatabase);
-
-            // if (GUILayout.Button("Refresh Results"))
-            // {
-            //     ResultView.GenerateResults(SpriteDatabase, currentFilter);
-            // }
             
             EditorGUILayout.EndVertical();
         }
