@@ -10,7 +10,11 @@ namespace BrunoMikoski.SpriteAuditor
         private static bool isReferencesDirty;
         public static bool IsReferencesDirty => isReferencesDirty;
 
+        private static bool isMemoryDataDirty;
+        public static bool IsMemoryDataDirty => isMemoryDataDirty;
+
         private static SceneAsset cachedDontDestroyOnLoadSceneAsset;
+
         public static SceneAsset DontDestroyOnLoadSceneAsset
         {
             get
@@ -103,6 +107,17 @@ namespace BrunoMikoski.SpriteAuditor
 
         }
 
+
+        public static void SetMemoryDataDirty()
+        {
+            isMemoryDataDirty = true;
+        }
+
+        public static void MemoryDataLoaded()
+        {
+            isMemoryDataDirty = false;
+        }
+        
         public static void SetResultViewDirty()
         {
             isReferencesDirty = true;

@@ -1,6 +1,7 @@
 ﻿using System;
 using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityEditor.U2D;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ namespace BrunoMikoski.SpriteAuditor
     public class SpriteAuditorWindow : EditorWindow
     {
         private const string ATLAS_AUDITOR_STORAGE_KEY = "ATLAS_AUDITOR_STORAGE_KEY";
-        private static string[] VISUALIZATION_NAMES = {"Scene View", "Atlas View"};
+        private static string[] VISUALIZATION_NAMES = {"Scene View", "Atlas View", "Sprite View"};
         
         private bool isRecording;
         
@@ -34,9 +35,6 @@ namespace BrunoMikoski.SpriteAuditor
         private SpriteAuditorEventForwarder spriteAuditorEventForwarder;
         private float spriteUsageSizeThreshold = 0.25f;
 
-
-        private ResultsFilter currentFilter = (ResultsFilter)  ~0;
-        
         private BaseResultView resultView;
         private BaseResultView ResultView
         {
@@ -56,7 +54,10 @@ namespace BrunoMikoski.SpriteAuditor
                     resultView = new SceneResultView();
                     break;
                 case VisualizationType.Atlas:
-                    resultView = new SceneResultView();
+                    resultView = new AtlasResultView();
+                    break;
+                case VisualizationType.Sprite:
+                    resultView = new SpriteResultView();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -80,40 +81,54 @@ namespace BrunoMikoski.SpriteAuditor
         {
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
         }
-        
+
+        [DidReloadScripts]
+        public static void ScriptsReloaded()
+        {
+            SpriteAuditorUtility.SetMemoryDataDirty();
+            SpriteAuditorUtility.SetResultViewDirty();
+        }
         private void OnPlayModeChanged(PlayModeStateChange playMode)
         {
-            if (playMode == PlayModeStateChange.EnteredPlayMode)
+            switch (playMode)
             {
-                if (recordOnPlay)
-                    StartRecording();
-            }
-            else if(playMode == PlayModeStateChange.ExitingPlayMode)
-            {
-                if (isRecording)
+                case PlayModeStateChange.EnteredPlayMode:
                 {
-                    StopRecording();
-                    SaveAtlasResult();
+                    if (recordOnPlay)
+                        StartRecording();
+                    break;
                 }
+                case PlayModeStateChange.ExitingPlayMode:
+                {
+                    if (isRecording)
+                    {
+                        StopRecording();
+                        SaveAtlasResult();
+                    }
+
+                    break;
+                }
+                case PlayModeStateChange.EnteredEditMode:
+                    SpriteAuditorUtility.SetResultViewDirty();
+                    break;
             }
         }
 
         private void LoadOrCreateAtlasResult()
         {
             string storedJson = EditorPrefs.GetString(ATLAS_AUDITOR_STORAGE_KEY, string.Empty);
-            Debug.Log("LOAD: "+storedJson);
             cachedSpriteDatabase = new SpriteDatabase();
 
             if (!string.IsNullOrEmpty(storedJson))
                 JsonWrapper.FromJson(storedJson, ref cachedSpriteDatabase);
             
             spriteFinder.SetResult(SpriteDatabase);
+            SpriteAuditorUtility.MemoryDataLoaded();
         }
 
         private void SaveAtlasResult()
         {
             string json = JsonWrapper.ToJson(SpriteDatabase, false);
-            Debug.Log("SAVE: "+json);
             EditorPrefs.SetString(ATLAS_AUDITOR_STORAGE_KEY, json);
         }
         
@@ -135,6 +150,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void DrawResults()
         {
+            if (SpriteAuditorUtility.IsMemoryDataDirty)
+                LoadOrCreateAtlasResult();
+            
             if (SpriteDatabase == null)
                 return;
 
@@ -146,29 +164,25 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.BeginHorizontal("Box");
             EditorGUI.BeginChangeCheck();
             visualizationType =
-                (VisualizationType) GUILayout.SelectionGrid((int) visualizationType, VISUALIZATION_NAMES, 2,
+                (VisualizationType) GUILayout.SelectionGrid((int) visualizationType, VISUALIZATION_NAMES, 3,
                     EditorStyles.radioButton);
             if (EditorGUI.EndChangeCheck())
             {
                 CreateResultViewByVisualizationType();
+                SpriteAuditorUtility.SetResultViewDirty();
             }
             
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal("Box");
 
-            EditorGUI.BeginChangeCheck();
-            currentFilter = (ResultsFilter) EditorGUILayout.EnumFlagsField("Filter", currentFilter);
+            ResultView.DrawFilterOptions();
 
-            if (EditorGUI.EndChangeCheck())
-                SpriteAuditorUtility.SetResultViewDirty();
-            
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndHorizontal();
-
 
             if (SpriteAuditorUtility.IsReferencesDirty)
             {
-                ResultView.GenerateResults(SpriteDatabase, currentFilter);
+                ResultView.GenerateResults(SpriteDatabase);
                 SpriteAuditorUtility.SetResultViewUpdated();
             }
             

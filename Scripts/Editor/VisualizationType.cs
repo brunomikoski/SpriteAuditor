@@ -3,6 +3,7 @@
     public enum VisualizationType
     {
         Scene,
-        Atlas
+        Atlas,
+        Sprite
     }
 }

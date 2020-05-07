@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine.U2D;
@@ -7,19 +8,98 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public sealed class SceneResultView : BaseResultView
     {
+        [Flags]
+        private enum Filter
+        {
+            UsedSmallerThanSpriteSize = 1 << 0,
+            UsedBiggerThanSpriteSize = 1 << 1,
+            UsedOnlyOnOneScenes = 1 << 2,
+            UnableToDetectAllSizes = 1 << 3,
+            SingleSprites = 1 << 4,
+            MultipleSprites = 1 << 5,
+            InsideAtlasSprites = 1 << 6,
+            InsideScaledAtlasVariant = 1 << 7
+        }
+        
         private SceneAsset[] uniqueUsedScenes;
 
         private readonly Dictionary<SceneAsset, SpriteData[]> sceneToSingleSprites = new Dictionary<SceneAsset, SpriteData[]>();
 
         private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites
             = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
-        
-        public override void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter)
+
+        private Filter currentFilter = (Filter) ~0;
+
+        public override void DrawFilterOptions()
+        {
+            EditorGUI.BeginChangeCheck();
+            currentFilter = (Filter) EditorGUILayout.EnumFlagsField("Filter", currentFilter);
+            if (EditorGUI.EndChangeCheck())
+                SpriteAuditorUtility.SetResultViewDirty();
+        }
+
+        private bool MatchFilter(SpriteData data)
+        {
+            if (currentFilter.HasFlag(Filter.UsedSmallerThanSpriteSize))
+            {
+                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(Filter.UsedBiggerThanSpriteSize))
+            {
+                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(Filter.UsedOnlyOnOneScenes))
+            {
+                if (data.SceneAssets.Count == 1)
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(Filter.UnableToDetectAllSizes))
+            {
+                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(Filter.SingleSprites))
+            {
+                if (data.TextureImporter.spriteImportMode == SpriteImportMode.Single)
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(Filter.MultipleSprites))
+            {
+                if (data.TextureImporter.spriteImportMode == SpriteImportMode.Multiple)
+                    return true;
+            }
+            
+            if (currentFilter.HasFlag(Filter.InsideAtlasSprites))
+            {
+                if(data.IsInsideAtlas())
+                    return true;
+            }
+
+            if (currentFilter.HasFlag(Filter.InsideScaledAtlasVariant))
+            {
+                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsingScaledAtlasSize))
+                    return true;
+            }
+
+            return false;
+        }
+        public override void GenerateResults(SpriteDatabase spriteDatabase)
         {
             //This method is kinda of dumb doing a lot of repetitive task, but its just easier to read this way
             HashSet<SceneAsset> usedScenes = new HashSet<SceneAsset>();
 
-            SpriteData[] validSprites = spriteDatabase.GetFilteredSprites(currentFilter);
+            SpriteData[] validSprites = spriteDatabase.SpritesData
+                .Where(ValidSpriteData)
+                .Where(MatchFilter)
+                .OrderBy(data => data.Sprite.name)
+                .ToArray();
             
             for (int i = 0; i < validSprites.Length; i++)
             {

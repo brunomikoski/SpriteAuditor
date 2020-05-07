@@ -11,11 +11,8 @@ namespace BrunoMikoski.SpriteAuditor
     {
         [SerializeField]
         private List<SpriteData> spritesData = new List<SpriteData>(512);
-
-        public SpriteData[] GetFilteredSprites(ResultsFilter currentFilter)
-        {
-            return spritesData.Where(data => data.Match(currentFilter)).OrderBy(data => data.Sprite.name).ToArray();
-        }
+        public List<SpriteData> SpritesData => spritesData;
+    
 
         public void ReportButton(Button button)
         {

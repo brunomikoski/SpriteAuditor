@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using BrunoMikoski.SpriteAuditor.Utils;
 using UnityEditor;
-using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
@@ -27,7 +26,6 @@ namespace BrunoMikoski.SpriteAuditor
         public Vector3? MaximumUsageSize => maximumUsageSize;
         [SerializeField]
         private string spriteTexturePath;
-        public string SpriteTexturePath => spriteTexturePath;
         [SerializeField] 
         private List<SpriteUseData> usages = new List<SpriteUseData>();
         public List<SpriteUseData> Usages => usages;
@@ -134,65 +132,6 @@ namespace BrunoMikoski.SpriteAuditor
                 if (AtlasCacheUtility.TryGetAtlasScale(spriteAtlas, out atlasScale))
                     spriteUsageFlags |= SpriteUsageFlags.UsingScaledAtlasSize;
             }
-        }
-
-        public bool Match(ResultsFilter currentFilter)
-        {
-            if (spriteUsageFlags.HasFlag(SpriteUsageFlags.DefaultUnityAsset))
-                return false;
-            
-            if (Sprite == null)
-                return false;
-
-            if (currentFilter.HasFlag(ResultsFilter.UsedSmallerThanSpriteSize))
-            {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
-                    return true;
-            }
-
-            if (currentFilter.HasFlag(ResultsFilter.UsedBiggerThanSpriteSize))
-            {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
-                    return true;
-            }
-            
-            if (currentFilter.HasFlag(ResultsFilter.UsedOnlyOnOneScenes))
-            {
-                if (scenesPath.Count == 1)
-                    return true;
-            }
-
-            if (currentFilter.HasFlag(ResultsFilter.UnableToDetectAllSizes))
-            {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
-                    return true;
-            }
-
-            if (currentFilter.HasFlag(ResultsFilter.SingleSprites))
-            {
-                if (TextureImporter.spriteImportMode == SpriteImportMode.Single)
-                    return true;
-            }
-            
-            if (currentFilter.HasFlag(ResultsFilter.MultipleSprites))
-            {
-                if (TextureImporter.spriteImportMode == SpriteImportMode.Multiple)
-                    return true;
-            }
-            
-            if (currentFilter.HasFlag(ResultsFilter.InsideAtlasSprites))
-            {
-                if(IsInsideAtlas())
-                    return true;
-            }
-
-            if (currentFilter.HasFlag(ResultsFilter.InsideScaledAtlasVariant))
-            {
-                if (spriteUsageFlags.HasFlag(SpriteUsageFlags.UsingScaledAtlasSize))
-                    return true;
-            }
-
-            return false;
         }
         
         public void ReportUse(GameObject instance, Vector3? size)

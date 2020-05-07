@@ -75,5 +75,21 @@ namespace BrunoMikoski.SpriteAuditor
             atlasScale = 1;
             return atlasToScale.TryGetValue(spriteAtlas, out atlasScale); 
         }
+
+        public static List<SpriteAtlas> GetAllKnowAtlases()
+        {
+            List<SpriteAtlas> atlases = new List<SpriteAtlas>();
+            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
+            
+            for (int i = 0; i < atlasGUIDs.Length; i++)
+            {
+                SpriteAtlas atlas =
+                    AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
+
+                atlases.Add(atlas);
+            }
+
+            return atlases;
+        }
     }
 }

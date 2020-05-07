@@ -8,7 +8,9 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public abstract class BaseResultView
     {
-        public abstract void GenerateResults(SpriteDatabase spriteDatabase, ResultsFilter currentFilter);
+        public abstract void DrawFilterOptions();
+        
+        public abstract void GenerateResults(SpriteDatabase spriteDatabase);
 
         public abstract void DrawResults(SpriteDatabase spriteDatabase);
 
@@ -31,6 +33,17 @@ namespace BrunoMikoski.SpriteAuditor
                 EditorGUI.indentLevel--;
             }
             EditorGUILayout.EndVertical();
+        }
+        
+        protected bool ValidSpriteData(SpriteData data)
+        {
+            if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.DefaultUnityAsset))
+                return false;
+            
+            if (data.Sprite == null)
+                return false;
+
+            return true;
         }
 
         private void DrawWarnings(SpriteData spriteData)
