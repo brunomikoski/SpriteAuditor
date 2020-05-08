@@ -182,6 +182,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (SpriteAuditorUtility.IsReferencesDirty)
             {
+                AtlasCacheUtility.ClearAtlasCache();
                 ResultView.GenerateResults(SpriteDatabase);
                 SpriteAuditorUtility.SetResultViewUpdated();
             }
@@ -216,6 +217,10 @@ namespace BrunoMikoski.SpriteAuditor
             
             if (GUILayout.Button("Pack Atlases", EditorStyles.toolbarButton))
                 SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
+
+            if (GUILayout.Button("Refresh Atlases", EditorStyles.toolbarButton))
+                AtlasCacheUtility.CacheKnowAtlases();
+            
             EditorGUI.EndDisabledGroup();
 
             EditorGUILayout.EndHorizontal();
@@ -241,6 +246,7 @@ namespace BrunoMikoski.SpriteAuditor
                 return;
             isRecording = true;
 
+            AtlasCacheUtility.ClearAtlasCache();
             LoadOrCreateAtlasResult();
             SpriteDatabase.PrepareForRun();
             

@@ -90,7 +90,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public static bool CanTweakMaxSize(SpriteData spriteData)
         {
-            if (!spriteData.MaximumUsageSize.HasValue)
+            if (!spriteData.MaximumUsageSize.HasValue || spriteData.TextureImporter == null)
                 return false;
 
             int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));

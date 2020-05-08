@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.U2D;
 
 namespace BrunoMikoski.SpriteAuditor
@@ -20,7 +21,7 @@ namespace BrunoMikoski.SpriteAuditor
         
         private SpriteAtlas[] filteredAtlas = new SpriteAtlas[0];
         private Dictionary<SpriteAtlas, SpriteData[]> atlasToUsedSprites = new Dictionary<SpriteAtlas, SpriteData[]>();
-        private Dictionary<SpriteAtlas, SpriteData[]> atlasToNotUsedSprites = new Dictionary<SpriteAtlas, SpriteData[]>();
+        private Dictionary<SpriteAtlas, Sprite[]> atlasToNotUsedSprites = new Dictionary<SpriteAtlas, Sprite[]>();
 
         public override void DrawFilterOptions()
         {
@@ -34,23 +35,29 @@ namespace BrunoMikoski.SpriteAuditor
         {
             if (spriteDatabase?.SpritesData == null)
                 return;
+
             
             atlasToUsedSprites.Clear();
             atlasToNotUsedSprites.Clear();
    
             filteredAtlas = AtlasCacheUtility.GetAllKnowAtlases().Where(atlas => MatchFilter(atlas, spriteDatabase))
                 .OrderBy(atlas => atlas.name).ToArray();
-            SpriteData[] validSprites = spriteDatabase.SpritesData.Where(ValidSpriteData)
+            
+            SpriteData[] validSprites = spriteDatabase.SpritesData.Where(ValidSpriteData).Where(data => data.IsInsideAtlas())
                 .OrderBy(data => data.Sprite.name).ToArray();
 
             for (int i = 0; i < filteredAtlas.Length; i++)
             {
                 SpriteAtlas atlas = filteredAtlas[i];
 
-                SpriteData[] usedSpritesFromThisAtlas =
-                    validSprites.Where(data => data.IsInsideAtlas() && data.SpriteAtlas == atlas).ToArray();
+                SpriteData[] usedSpritesFromThisAtlas = validSprites.Where(data => data.IsInsideAtlas() && data.SpriteAtlas == atlas).ToArray();
                 atlasToUsedSprites.Add(atlas, usedSpritesFromThisAtlas);
-                atlasToNotUsedSprites.Add(atlas, validSprites.Except(usedSpritesFromThisAtlas).ToArray());
+                Sprite[] spritesInsideAtlas = AtlasCacheUtility.GetAllSpritesFromAtlas(atlas);
+
+                Sprite[] notUSedSprites =
+                    spritesInsideAtlas.Where(sprite => usedSpritesFromThisAtlas.All(data => data.Sprite != sprite)).ToArray();
+                
+                atlasToNotUsedSprites.Add(atlas, notUSedSprites);
             }
         }
 
@@ -95,8 +102,12 @@ namespace BrunoMikoski.SpriteAuditor
 
                             for (int j = 0; j < atlasToNotUsedSprites[atlas].Length; j++)
                             {
-                                SpriteData spriteData = atlasToNotUsedSprites[atlas][j];
-                                DrawSpriteDataField(spriteData);
+                                Sprite sprite = atlasToNotUsedSprites[atlas][j];
+                                if (sprite == null)
+                                    continue;
+                                
+                                SpriteAuditorGUIUtility.DrawObjectFoldout(sprite,
+                                    $"{VisualizationType.Atlas.ToString()}_{atlas.name}_{sprite.name}", false);
                             }
 
                             EditorGUI.indentLevel--;

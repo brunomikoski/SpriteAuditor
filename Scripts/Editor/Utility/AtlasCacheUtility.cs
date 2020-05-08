@@ -13,7 +13,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         private static bool hasDataCached;
         
-        private static void CacheKnowAtlases()
+        public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();
             atlasToScale.Clear();
@@ -90,6 +90,22 @@ namespace BrunoMikoski.SpriteAuditor
             }
 
             return atlases;
+        }
+
+        public static void ClearAtlasCache()
+        {
+            hasDataCached = false;
+        }
+
+        public static Sprite[] GetAllSpritesFromAtlas(SpriteAtlas atlas)
+        {
+            if (!hasDataCached)
+                CacheKnowAtlases();
+            
+            if (atlasToAllSprites.TryGetValue(atlas, out Sprite[] sprites))
+                return sprites;
+
+            return new Sprite[0];
         }
     }
 }
