@@ -17,7 +17,7 @@ namespace BrunoMikoski.SpriteAuditor
             WithUsagesFound = 1 << 2
         }
 
-        private Filter currentFilter = (Filter) ~0;
+        private Filter currentFilter;
         
         private SpriteAtlas[] filteredAtlas = new SpriteAtlas[0];
         private Dictionary<SpriteAtlas, SpriteData[]> atlasToUsedSprites = new Dictionary<SpriteAtlas, SpriteData[]>();
@@ -126,14 +126,14 @@ namespace BrunoMikoski.SpriteAuditor
         {
             if (currentFilter.HasFlag(Filter.IncludedInBuild))
             {
-                if (atlas.IsIncludedInBuild())
-                    return true;
+                if (!atlas.IsIncludedInBuild())
+                    return false;
             }
             
             if(currentFilter.HasFlag(Filter.IsVariant))
             {
-                if (atlas.isVariant)
-                    return true;
+                if (!atlas.isVariant)
+                    return false;
             }
 
             if (currentFilter.HasFlag(Filter.WithUsagesFound))
@@ -147,9 +147,10 @@ namespace BrunoMikoski.SpriteAuditor
                     if (spriteData.SpriteAtlas == atlas)
                         return true;
                 }
+                return false;
             }
 
-            return false;
+            return true;
         }
     }
 }

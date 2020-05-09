@@ -28,7 +28,7 @@ namespace BrunoMikoski.SpriteAuditor
         private readonly Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>> sceneToAtlasToUsedSprites
             = new Dictionary<SceneAsset, Dictionary<SpriteAtlas, HashSet<SpriteData>>>();
 
-        private Filter currentFilter = (Filter) ~0;
+        private Filter currentFilter;
 
         public override void DrawFilterOptions()
         {
@@ -42,53 +42,53 @@ namespace BrunoMikoski.SpriteAuditor
         {
             if (currentFilter.HasFlag(Filter.UsedSmallerThanSpriteSize))
             {
-                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
-                    return true;
+                if (!data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                    return false;
             }
 
             if (currentFilter.HasFlag(Filter.UsedBiggerThanSpriteSize))
             {
-                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
-                    return true;
+                if (!data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                    return false;
             }
             
             if (currentFilter.HasFlag(Filter.UsedOnlyOnOneScenes))
             {
-                if (data.SceneAssets.Count == 1)
-                    return true;
+                if (data.SceneAssets.Count > 1)
+                    return false;
             }
 
             if (currentFilter.HasFlag(Filter.UnableToDetectAllSizes))
             {
-                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
-                    return true;
+                if (!data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.CantDiscoveryAllUsageSize))
+                    return false;
             }
 
             if (currentFilter.HasFlag(Filter.SingleSprites))
             {
-                if (data.TextureImporter.spriteImportMode == SpriteImportMode.Single)
-                    return true;
+                if (data.TextureImporter.spriteImportMode != SpriteImportMode.Single)
+                    return false;
             }
             
             if (currentFilter.HasFlag(Filter.MultipleSprites))
             {
-                if (data.TextureImporter.spriteImportMode == SpriteImportMode.Multiple)
-                    return true;
+                if (data.TextureImporter.spriteImportMode != SpriteImportMode.Multiple)
+                    return false;
             }
             
             if (currentFilter.HasFlag(Filter.InsideAtlasSprites))
             {
-                if(data.IsInsideAtlas())
-                    return true;
+                if(!data.IsInsideAtlas())
+                    return false;
             }
 
             if (currentFilter.HasFlag(Filter.InsideScaledAtlasVariant))
             {
-                if (data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsingScaledAtlasSize))
-                    return true;
+                if (!data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsingScaledAtlasSize))
+                    return false;
             }
 
-            return false;
+            return true;
         }
         public override void GenerateResults(SpriteDatabase spriteDatabase)
         {
