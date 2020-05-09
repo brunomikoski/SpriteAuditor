@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -44,13 +45,24 @@ namespace BrunoMikoski.SpriteAuditor
 
         [SerializeField]
         private int instanceID;
+
+        [SerializeField]
+        private string nearestPrefabGUID;
+        public string NearestPrefabGUID => nearestPrefabGUID;
+
         public int InstanceID => instanceID;
 
 
-        public SpriteUseData(int instanceID, string usagePath)
+        public SpriteUseData(GameObject gameObject, int instanceID, string usagePath)
         {
             this.instanceID = instanceID;
             hierarchyPaths.Add(usagePath);
+
+            if (PrefabUtility.IsPartOfAnyPrefab(gameObject))
+            {
+                nearestPrefabGUID =
+                    AssetDatabase.AssetPathToGUID(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(gameObject));
+            }
         }
 
         public void ReportPath(string usagePath, Scene targetScene)

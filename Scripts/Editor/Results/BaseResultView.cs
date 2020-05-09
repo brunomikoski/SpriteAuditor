@@ -62,33 +62,35 @@ namespace BrunoMikoski.SpriteAuditor
                     $"Cannot detect all sprite usages sizes!", SpriteAuditorGUIUtility.WarningIcon));
             }
 
-            float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
-                                        spriteData.SpriteSize.magnitude;
+            if (spriteData.MaximumUsageSize.HasValue)
+            {
+                float differenceMagnitude = spriteData.MaximumUsageSize.Value.magnitude /
+                                            spriteData.SpriteSize.magnitude;
             
-            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
-            {
-                
+                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect))
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(new GUIContent(
+                        $"Sprite is used {Mathf.Abs(1.0f-differenceMagnitude):P} bigger than original Sprite, you may scale it up",
+                        SpriteAuditorGUIUtility.WarningIcon));
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(new GUIContent(
-                    $"Sprite is used {Mathf.Abs(1.0f-differenceMagnitude):P} bigger than original Sprite, you may scale it up",
-                    SpriteAuditorGUIUtility.WarningIcon));
+                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                    EditorGUILayout.EndHorizontal();
+                }
 
-                SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
-                EditorGUILayout.EndHorizontal();
+                if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(new GUIContent(
+                        $"Sprite is used {Mathf.Abs(1.0f - differenceMagnitude):P} smaller than original Sprite, you may scale it down",
+                        SpriteAuditorGUIUtility.WarningIcon));
+
+
+                    SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
+                    EditorGUILayout.EndHorizontal();
+                }
             }
 
-            if (spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(new GUIContent(
-                    $"Sprite is used {Mathf.Abs(1.0f - differenceMagnitude):P} smaller than original Sprite, you may scale it down",
-                    SpriteAuditorGUIUtility.WarningIcon));
-
-
-                SpriteAuditorGUIUtility.DrawFixSpriteSize(spriteData);
-                EditorGUILayout.EndHorizontal();
-            }
             EditorGUI.indentLevel--;
         }
 
@@ -162,10 +164,12 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void TrySelect(SpriteUseData spriteUseData)
         {
-            Object targetInstance = EditorUtility.InstanceIDToObject(spriteUseData.InstanceID);
-            if (targetInstance != null)
+            if (!string.IsNullOrEmpty(spriteUseData.NearestPrefabGUID))
             {
-                Selection.SetActiveObjectWithContext(targetInstance, null);
+                if (!Application.isPlaying)
+                {
+                     GameObject prefabInstance = PrefabUtility.LoadPrefabContents(AssetDatabase.GUIDToAssetPath(spriteUseData.NearestPrefabGUID));
+                }
             }
             else
             {

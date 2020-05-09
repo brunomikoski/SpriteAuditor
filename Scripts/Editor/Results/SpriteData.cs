@@ -137,7 +137,7 @@ namespace BrunoMikoski.SpriteAuditor
         public void ReportUse(GameObject instance, Vector3? size)
         {
             string usagePath = instance.transform.GetPath();
-            SpriteUseData spriteUsageData = GetOrCreateSpriteUsageData(instance.GetInstanceID(), usagePath);
+            SpriteUseData spriteUsageData = GetOrCreateSpriteUsageData(instance, usagePath);
             Scene instanceScene = instance.scene;
             ReportScene(instanceScene);
             spriteUsageData.ReportPath(usagePath, instanceScene);
@@ -230,12 +230,13 @@ namespace BrunoMikoski.SpriteAuditor
                 }
             }}
 
-        private SpriteUseData GetOrCreateSpriteUsageData(int instanceID, string usagePath)
+        private SpriteUseData GetOrCreateSpriteUsageData(GameObject instance, string usagePath)
         {
-            if (TryGetSpriteUsageData(instanceID,usagePath, out SpriteUseData spriteUseData))
+            int instanceID = instance.GetInstanceID();
+            if (TryGetSpriteUsageData(instanceID, usagePath, out SpriteUseData spriteUseData))
                 return spriteUseData;
 
-            spriteUseData = new SpriteUseData(instanceID, usagePath);
+            spriteUseData = new SpriteUseData(instance, instanceID, usagePath);
             usages.Add(spriteUseData);
             SpriteAuditorUtility.SetResultViewDirty();
             return spriteUseData;
