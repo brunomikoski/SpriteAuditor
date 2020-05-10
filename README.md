@@ -1,5 +1,4 @@
 # Sprite Auditor
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/badawe/PresetManager/blob/develop/LICENSE)
 [![openupm](https://img.shields.io/npm/v/com.brunomikoski.spriteauditor?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.brunomikoski.spriteauditor/)
 
 ![](https://img.shields.io/github/followers/badawe?label=Follow&style=social) ![](https://img.shields.io/twitter/follow/brunomikoski?style=social)
