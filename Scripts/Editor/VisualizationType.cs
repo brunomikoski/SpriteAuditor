@@ -1,8 +1,9 @@
 ﻿namespace BrunoMikoski.SpriteAuditor
 {
-    internal enum VisualizationType
+    public enum VisualizationType
     {
         Scene,
-        Atlas
+        Atlas,
+        Sprite
     }
 }

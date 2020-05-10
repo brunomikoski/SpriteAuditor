@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace BrunoMikoski.SpriteAuditor
 {
-    public class SpriteAuditorForwarder : MonoBehaviour
+    public class SpriteAuditorEventForwarder : MonoBehaviour
     {
         private IProjectUpdateLoopListener listener;
 
