@@ -3,7 +3,7 @@
 
 ![](https://img.shields.io/github/followers/badawe?label=Follow&style=social) ![](https://img.shields.io/twitter/follow/brunomikoski?style=social)
 
-![inspector](/Documentation~/main-view.png)
+![inspector](/Documentation~/home-view.png)
 
 Sprite auditor its the tool to give you the visibility when optimizing your atlases for smaller binary size or performance, 
 allowing you see what atlas are reused between multiple scenes, and what sprites are in use from that atlas, giving you the visibility to now only gain performance by making sure you are only using the right atlas on the right place, 
