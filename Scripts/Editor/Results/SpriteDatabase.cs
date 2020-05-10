@@ -83,7 +83,7 @@ namespace BrunoMikoski.SpriteAuditor
             return spriteData;
         }
 
-        private bool TryGetSpriteDataBySprite(Sprite sprite, out SpriteData spriteData)
+        public bool TryGetSpriteDataBySprite(Sprite sprite, out SpriteData spriteData)
         {
             int spriteDatabaseCount = spritesData.Count;
             for (int i = 0; i < spriteDatabaseCount; i++)

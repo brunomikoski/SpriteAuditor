@@ -75,6 +75,8 @@ namespace BrunoMikoski.SpriteAuditor
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            SpriteAuditorUtility.SetMemoryDataDirty();
+            SpriteAuditorUtility.SetResultViewDirty();    
         }
 
         private void OnDisable()

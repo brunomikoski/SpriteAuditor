@@ -129,8 +129,8 @@ namespace BrunoMikoski.SpriteAuditor
                 if (!atlas.IsIncludedInBuild())
                     return false;
             }
-            
-            if(currentFilter.HasFlag(Filter.IsVariant))
+
+            if (currentFilter.HasFlag(Filter.IsVariant))
             {
                 if (!atlas.isVariant)
                     return false;
