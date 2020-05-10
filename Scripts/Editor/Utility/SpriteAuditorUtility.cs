@@ -1,5 +1,9 @@
-﻿using UnityEditor;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
@@ -14,6 +18,26 @@ namespace BrunoMikoski.SpriteAuditor
         public static bool IsMemoryDataDirty => isMemoryDataDirty;
 
         private static SceneAsset cachedDontDestroyOnLoadSceneAsset;
+
+        private static string cachedSearchText;
+
+        public static string SearchText
+        {
+            get => cachedSearchText;
+            set
+            {
+                if (!string.Equals(cachedSearchText, value, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    cachedSearchText = value;
+                    SearchSplitByComma = Array.ConvertAll(SearchText.Split(','), p => p.Trim());
+                    SetResultViewDirty();
+                }
+            }
+        }
+        
+        public static string[] SearchSplitByComma;
+        private static float spriteUsageSizeThreshold;
+        public static float SpriteUsageSizeThreshold => spriteUsageSizeThreshold;
 
         public static SceneAsset DontDestroyOnLoadSceneAsset
         {
@@ -126,6 +150,61 @@ namespace BrunoMikoski.SpriteAuditor
         public static void SetResultViewUpdated()
         {
             isReferencesDirty = false;
+        }
+        
+        [MenuItem("Assets/Sprite Auditor/Find Results of Selected Sprites")]
+        private static void SearchReferences()
+        {
+            HashSet<string> searchNames = new HashSet<string>();
+            
+            foreach (Object o in Selection.objects)
+            {
+                if (o is Sprite)
+                {
+                    searchNames.Add(o.name);
+                }
+
+                if (o is Texture2D)
+                {
+                    IEnumerable<Sprite> sprites = AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(o))
+                        .Where(o1 => o1 is Sprite).Cast<Sprite>();
+                    foreach (Sprite sprite in sprites)
+                    {
+                        searchNames.Add(sprite.name);
+                    }
+                }
+            }
+
+            SearchText = string.Join(",", searchNames);
+            SpriteAuditorWindow.GetWindowInstance().Focus();
+        }
+        
+        [MenuItem("Assets/Sprite Auditor/Find Results of Selected Sprites", true)]
+        private static bool ValidateSearchReferences()
+        {
+            if (!SpriteAuditorWindow.IsOpen())
+                return false;
+            
+            foreach (Object o in Selection.objects)
+            {
+                if (o is Sprite)
+                    return true;
+
+                if (o is Texture2D)
+                {
+                    IEnumerable<Sprite> sprites = AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(o))
+                        .Where(o1 => o1 is Sprite).Cast<Sprite>();
+                    return sprites.Any();
+                }
+                
+            }
+
+            return false;
+        }
+
+        public static void SetSizeCheckThreshold(float targetSpriteUsageSizeThreshold)
+        {
+            spriteUsageSizeThreshold = targetSpriteUsageSizeThreshold;
         }
     }
 }

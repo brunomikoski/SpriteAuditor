@@ -211,7 +211,7 @@ namespace BrunoMikoski.SpriteAuditor
                 maximumUsageSize.Value.y - SpriteSize.y, 0);
 
             float differenceMagnitude = sizeDifference.magnitude / SpriteSize.magnitude;
-            if (Mathf.Abs(differenceMagnitude) > 0.25f)
+            if (Mathf.Abs(differenceMagnitude) > SpriteAuditorUtility.SpriteUsageSizeThreshold)
             {
                 if (maximumUsageSize.Value.sqrMagnitude > SpriteSize.sqrMagnitude)
                 {

@@ -214,6 +214,8 @@ namespace BrunoMikoski.SpriteAuditor
                 EditorGUILayout.Slider("Allowed Size Variation", spriteUsageSizeThreshold, 0, 2);
             if (EditorGUI.EndChangeCheck())
             {
+                SpriteAuditorUtility.SetSizeCheckThreshold(spriteUsageSizeThreshold);
+                SpriteDatabase.SizeCheckThresholdChanged();
                 //TODO 
                 //SpriteDatabase.SetAllowedSizeVariation(spriteUsageSizeThreshold);
             }
