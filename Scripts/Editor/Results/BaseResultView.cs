@@ -1,18 +1,62 @@
 ﻿using System;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
     public abstract class BaseResultView
     {
+        private SearchField searchField;
+        protected string searchText;
+        private string previousSearchText;
+        private Vector2 scrollPosition = Vector2.zero;
+
         public abstract void DrawFilterOptions();
         
         public abstract void GenerateResults(SpriteDatabase spriteDatabase);
 
-        public abstract void DrawResults(SpriteDatabase spriteDatabase);
+        protected abstract void DrawResultsInternal(SpriteDatabase spriteDatabase);
+
+        public void DrawResults(SpriteDatabase spriteDatabase)
+        {
+            DrawSearch(spriteDatabase);
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, false, false);
+
+            DrawResultsInternal(spriteDatabase);
+            EditorGUILayout.EndScrollView();
+        }
+
+        protected bool MatchSearch(string name)
+        {
+            if (string.IsNullOrEmpty(searchText))
+                return true;
+
+            return !string.IsNullOrEmpty(name) &&
+                   name.IndexOf(searchText, StringComparison.CurrentCultureIgnoreCase) >= 0;
+        }
+
+        private void DrawSearch(SpriteDatabase spriteDatabase)
+        {
+            Rect searchRect =
+                GUILayoutUtility.GetRect(1, 1, 18, 18, GUILayout.ExpandWidth(true));
+
+            if (searchField == null)
+                searchField = new SearchField();
+
+            EditorGUI.BeginChangeCheck();
+            searchText = searchField.OnGUI(searchRect, searchText);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (!string.Equals(previousSearchText, searchText, StringComparison.Ordinal))
+                {
+                    previousSearchText = searchText;
+                    GenerateResults(spriteDatabase);
+                }
+            }
+            EditorGUILayout.Separator();
+        }
 
         protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
@@ -182,12 +226,13 @@ namespace BrunoMikoski.SpriteAuditor
                 }
 
                 string scenePath = paths[0];
-                if (string.IsNullOrEmpty(scenePath))
-                    return;
-
-                if (!Application.isPlaying)
+                if (!string.IsNullOrEmpty(scenePath))
                 {
-                    EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                    if (!scenePath.Contains("DontDestroyOnLoad"))
+                    {
+                        if (!Application.isPlaying)
+                            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                    }
                 }
 
                 GameObject gameObject = GameObject.Find(paths[1]);

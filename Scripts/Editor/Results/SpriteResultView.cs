@@ -60,8 +60,11 @@ namespace BrunoMikoski.SpriteAuditor
             this.usedSpriteDatas = usedSpriteDatas.ToArray();
         }
 
-        private bool MatchFilter(Sprite spriteData)
+        private bool MatchFilter(Sprite sprite)
         {
+            if (!MatchSearch(sprite.name))
+                return false;
+
             if (currentFilter.HasFlag(Filter.WithSizeWarnings))
                 return false;
 
@@ -79,7 +82,7 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (currentFilter.HasFlag(Filter.InsideAnyAtlas))
             {
-                if (AtlasCacheUtility.TryGetAtlasForSprite(spriteData, out SpriteAtlas atlas))
+                if (AtlasCacheUtility.TryGetAtlasForSprite(sprite, out SpriteAtlas atlas))
                     return true;
                 return false;
             }
@@ -89,6 +92,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         private bool MatchFilter(SpriteData spriteData)
         {
+            if (!MatchSearch(spriteData.Sprite.name))
+                return false;
+                
             if (currentFilter.HasFlag(Filter.WithSizeWarnings))
             {
                 if (!spriteData.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedBiggerThanSpriteRect)
@@ -138,7 +144,7 @@ namespace BrunoMikoski.SpriteAuditor
                 SpriteAuditorUtility.SetResultViewDirty();
         }
 
-        public override void DrawResults(SpriteDatabase spriteDatabase)
+        protected override void DrawResultsInternal(SpriteDatabase spriteDatabase)
         {
             EditorGUILayout.BeginVertical("Box");
             if (usedSpriteDatas.Length > 0)

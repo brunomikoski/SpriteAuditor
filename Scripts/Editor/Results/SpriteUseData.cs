@@ -67,7 +67,8 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportPath(string usagePath, Scene targetScene)
         {
-            string storagePath = $"{targetScene.path}{PATH_SEPARATOR}{usagePath}";
+            string targetScenePath = targetScene.path;
+            string storagePath = $"{targetScenePath}{PATH_SEPARATOR}{usagePath}";
 
             if (paths.Count == 0)
                 firstPath = storagePath;

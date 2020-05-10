@@ -40,6 +40,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         private bool MatchFilter(SpriteData data)
         {
+            if (!MatchSearch(data.Sprite.name))
+                return false;
+            
             if (currentFilter.HasFlag(Filter.UsedSmallerThanSpriteSize))
             {
                 if (!data.SpriteUsageFlags.HasFlag(SpriteUsageFlags.UsedSmallerThanSpriteRect))
@@ -171,7 +174,7 @@ namespace BrunoMikoski.SpriteAuditor
             uniqueUsedScenes = usedScenes.ToArray();
         }
 
-        public override void DrawResults(SpriteDatabase spriteDatabase)
+        protected override void DrawResultsInternal(SpriteDatabase spriteDatabase)
         {
             if (uniqueUsedScenes == null)
                 return;

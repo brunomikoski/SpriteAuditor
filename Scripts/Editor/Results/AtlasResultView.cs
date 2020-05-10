@@ -50,9 +50,12 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 SpriteAtlas atlas = filteredAtlas[i];
 
-                SpriteData[] usedSpritesFromThisAtlas = validSprites.Where(data => data.IsInsideAtlas() && data.SpriteAtlas == atlas).ToArray();
+                SpriteData[] usedSpritesFromThisAtlas =
+                    validSprites.Where(data =>
+                        data.IsInsideAtlas() && data.SpriteAtlas == atlas && MatchSearch(data.Sprite.name)).ToArray();
                 atlasToUsedSprites.Add(atlas, usedSpritesFromThisAtlas);
-                Sprite[] spritesInsideAtlas = AtlasCacheUtility.GetAllSpritesFromAtlas(atlas);
+                Sprite[] spritesInsideAtlas = AtlasCacheUtility.GetAllSpritesFromAtlas(atlas)
+                    .Where(sprite => MatchSearch(sprite.name)).ToArray();
 
                 Sprite[] notUSedSprites =
                     spritesInsideAtlas.Where(sprite => usedSpritesFromThisAtlas.All(data => data.Sprite != sprite)).ToArray();
@@ -61,7 +64,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        public override void DrawResults(SpriteDatabase spriteDatabase)
+        protected override void DrawResultsInternal(SpriteDatabase spriteDatabase)
         {
             for (int i = 0; i < filteredAtlas.Length; i++)
             {
@@ -124,6 +127,7 @@ namespace BrunoMikoski.SpriteAuditor
         
         private bool MatchFilter(SpriteAtlas atlas, SpriteDatabase spriteDatabase)
         {
+            
             if (currentFilter.HasFlag(Filter.IncludedInBuild))
             {
                 if (!atlas.IsIncludedInBuild())

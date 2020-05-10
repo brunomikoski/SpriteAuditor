@@ -233,7 +233,7 @@ namespace BrunoMikoski.SpriteAuditor
         private SpriteUseData GetOrCreateSpriteUsageData(GameObject instance, string usagePath)
         {
             int instanceID = instance.GetInstanceID();
-            if (TryGetSpriteUsageData(instanceID, usagePath, out SpriteUseData spriteUseData))
+            if (TryGetSpriteUsageData(instance, instanceID, usagePath, out SpriteUseData spriteUseData))
                 return spriteUseData;
 
             spriteUseData = new SpriteUseData(instance, instanceID, usagePath);
@@ -242,15 +242,26 @@ namespace BrunoMikoski.SpriteAuditor
             return spriteUseData;
         }
 
-        private bool TryGetSpriteUsageData(int instanceID, string usagePath, out SpriteUseData spriteUseData)
+        private bool TryGetSpriteUsageData(GameObject instance, int instanceID, string usagePath,
+            out SpriteUseData spriteUseData)
         {
             int usagesCount = usages.Count;
             for (int i = 0; i < usagesCount; i++)
             {
                 spriteUseData = usages[i];
+                string prefabGUID = string.Empty;
+
+                if (PrefabUtility.IsPartOfAnyPrefab(instance))
+                {
+                    prefabGUID = AssetDatabase.AssetPathToGUID(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(instance));
+                }
+
                 if (spriteUseData.InstanceID == instanceID
-                || spriteUseData.HierarchyPaths.Contains(usagePath))
+                    || spriteUseData.HierarchyPaths.Contains(usagePath)
+                    || String.Equals(prefabGUID, spriteUseData.NearestPrefabGUID, StringComparison.Ordinal))
+                {
                     return true;
+                }
             }
 
             spriteUseData = null;

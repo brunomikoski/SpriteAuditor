@@ -27,9 +27,6 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-
-        private Vector2 scrollPosition = Vector2.zero;
-
         private bool recordOnPlay = true;
         private VisualizationType visualizationType = VisualizationType.Scene;
         private SpriteAuditorEventForwarder spriteAuditorEventForwarder;
@@ -142,12 +139,8 @@ namespace BrunoMikoski.SpriteAuditor
         
         private void OnGUI()
         {
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, false, false);
-
             DrawSettings();
             DrawResults();
-            
-            EditorGUILayout.EndScrollView();
         }
 
         private void DrawResults()
