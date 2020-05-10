@@ -1,7 +1,7 @@
 {
   "name": "com.brunomikoski.spriteauditor",
   "displayName": "Sprite Auditor",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "unity": "2018.4",
   "description": "Visualizer for sprites usage / atlas ",
   "keywords": [
