@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
+using UnityEditor.U2D;
 using UnityEngine;
 
 namespace BrunoMikoski.SpriteAuditor
@@ -9,8 +10,6 @@ namespace BrunoMikoski.SpriteAuditor
     public abstract class BaseResultView
     {
         private SearchField searchField;
-        protected string searchText;
-        private string previousSearchText;
         private Vector2 scrollPosition = Vector2.zero;
 
         public abstract void DrawFilterOptions();
@@ -21,7 +20,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void DrawResults(SpriteDatabase spriteDatabase)
         {
-            DrawSearch(spriteDatabase);
+            DrawSearch();
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, false, false);
 
             DrawResultsInternal(spriteDatabase);
@@ -30,14 +29,23 @@ namespace BrunoMikoski.SpriteAuditor
 
         protected bool MatchSearch(string name)
         {
-            if (string.IsNullOrEmpty(searchText))
+            if (string.IsNullOrEmpty(SpriteAuditorUtility.SearchText))
                 return true;
 
-            return !string.IsNullOrEmpty(name) &&
-                   name.IndexOf(searchText, StringComparison.CurrentCultureIgnoreCase) >= 0;
+            for (int i = 0; i < SpriteAuditorUtility.SearchSplitByComma.Length; i++)
+            {
+                string searchTerm = SpriteAuditorUtility.SearchSplitByComma[i];
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    if (name.IndexOf(searchTerm, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
-        private void DrawSearch(SpriteDatabase spriteDatabase)
+        private void DrawSearch()
         {
             Rect searchRect =
                 GUILayoutUtility.GetRect(1, 1, 18, 18, GUILayout.ExpandWidth(true));
@@ -46,14 +54,10 @@ namespace BrunoMikoski.SpriteAuditor
                 searchField = new SearchField();
 
             EditorGUI.BeginChangeCheck();
-            searchText = searchField.OnGUI(searchRect, searchText);
+            string searchText = searchField.OnGUI(searchRect, SpriteAuditorUtility.SearchText);
             if (EditorGUI.EndChangeCheck())
             {
-                if (!string.Equals(previousSearchText, searchText, StringComparison.Ordinal))
-                {
-                    previousSearchText = searchText;
-                    GenerateResults(spriteDatabase);
-                }
+                SpriteAuditorUtility.SearchText = searchText;
             }
             EditorGUILayout.Separator();
         }
@@ -247,5 +251,6 @@ namespace BrunoMikoski.SpriteAuditor
         {
             //TODO
         }
+
     }
 }
