@@ -33,6 +33,8 @@ namespace BrunoMikoski.SpriteAuditor
         private float spriteUsageSizeThreshold = 0.25f;
 
         private BaseResultView resultView;
+        private bool isOpen;
+
         private BaseResultView ResultView
         {
             get
@@ -65,20 +67,31 @@ namespace BrunoMikoski.SpriteAuditor
         [MenuItem("Tools/Sprite Auditor")]
         public static void OpenWindow()
         {
-            SpriteAuditorWindow window = GetWindow<SpriteAuditorWindow>("Atlas Auditor");
-            window.Show();
+            GetWindowInstance().Show();
+        }
+
+        public static SpriteAuditorWindow GetWindowInstance()
+        {
+            return GetWindow<SpriteAuditorWindow>("Atlas Auditor");
+        }
+        public static bool IsOpen()
+        {
+            return GetWindowInstance().isOpen;
         }
 
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
             SpriteAuditorUtility.SetMemoryDataDirty();
-            SpriteAuditorUtility.SetResultViewDirty();    
+            SpriteAuditorUtility.SetResultViewDirty();
+            isOpen = true;
         }
 
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+            isOpen = false;
+
         }
 
         [DidReloadScripts]
