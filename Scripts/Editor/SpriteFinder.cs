@@ -15,17 +15,11 @@ namespace BrunoMikoski.SpriteAuditor
 
         void IProjectUpdateLoopListener.OnProjectUpdate()
         {
-            Component[] components = Resources.FindObjectsOfTypeAll<Component>();
+            Component[] components = Object.FindObjectsOfType<Component>();
             for (int i = 0; i < components.Length; i++)
             {
                 Component component = components[i];
                 
-                if (component.hideFlags == HideFlags.NotEditable || component.hideFlags == HideFlags.HideAndDontSave)
-                    continue;
-                
-                if (EditorUtility.IsPersistent(component))
-                    continue;
-            
                 if (component is Image image)
                 {
                     result.ReportImage(image);

@@ -115,9 +115,9 @@ namespace BrunoMikoski.SpriteAuditor
         public SpriteData(Sprite targetSprite)
         {
             cachedSprite = targetSprite;
+            spriteName = cachedSprite.name;
             spriteTexturePath = AssetDatabase.GetAssetPath(cachedSprite);
             spriteTextureGUID = AssetDatabase.AssetPathToGUID(spriteTexturePath);
-            spriteName = targetSprite.name;
 
             if (string.Equals(spriteTexturePath, RESOURCES_UNITY_BUILTIN_EXTRA_PATH))
             {
@@ -125,7 +125,7 @@ namespace BrunoMikoski.SpriteAuditor
                 return;
             }
             
-            if (AtlasCacheUtility.TryGetAtlasForSprite(targetSprite, out SpriteAtlas spriteAtlas))
+            if (AtlasCacheUtility.TryGetAtlasForSprite(cachedSprite, out SpriteAtlas spriteAtlas))
             {
                 cachedSpriteAtlas = spriteAtlas;
                 spriteAtlasGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(spriteAtlas));

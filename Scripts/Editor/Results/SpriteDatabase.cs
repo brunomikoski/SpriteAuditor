@@ -15,6 +15,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void ReportButton(Button button)
         {
+            if (button.targetGraphic == null)
+                return;
+            
             Image buttonImage = button.targetGraphic as Image;
             if (buttonImage == null)
                 return;
