@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -21,7 +22,17 @@ namespace BrunoMikoski.SpriteAuditor
         {
             Type spriteReporterType = typeof(ISpriteReporter);
             List<Type> foundImplementations = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(x => x.GetTypes())
+                .SelectMany(x =>
+                {
+                    try
+                    {
+                        return x.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException)
+                    {
+                        return Array.Empty<Type>();
+                    }
+                })
                 .Where(x => x.IsClass && spriteReporterType.IsAssignableFrom(x)).ToList();
 
             if (foundImplementations.Count > 0)
