@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.1] - 23-05-2020
+### Changed  
+ - Cleared selection when switching views
+ - Fixed issue with missing EndHorizontal
+
 ## [0.2.0] - 23-05-2020
 ### Added 
  - Selection tools 
@@ -47,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
  - 
 
-
+[0.2.1]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.2.0
 [0.1.0]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.1.0
 [0.0.1]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.0.1
