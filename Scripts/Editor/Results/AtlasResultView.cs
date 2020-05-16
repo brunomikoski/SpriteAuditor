@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
+using Object = System.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
@@ -91,6 +92,8 @@ namespace BrunoMikoski.SpriteAuditor
                                 DrawSpriteDataField(spriteData);
                             }
 
+                            SpriteAuditorUtility.DrawDefaultSelectionOptions(atlasToNotUsedSprites[atlas]);
+
                             EditorGUI.indentLevel--;
                         }
                     }
@@ -108,11 +111,12 @@ namespace BrunoMikoski.SpriteAuditor
                                 Sprite sprite = atlasToNotUsedSprites[atlas][j];
                                 if (sprite == null)
                                     continue;
-                                
+
                                 SpriteAuditorGUIUtility.DrawObjectFoldout(sprite,
-                                    $"{VisualizationType.Atlas.ToString()}_{atlas.name}_{sprite.name}", false);
+                                    $"{VisualizationType.Atlas.ToString()}_{atlas.name}_{sprite.name}", false, true);
                             }
 
+                            SpriteAuditorUtility.DrawDefaultSelectionOptions(atlasToNotUsedSprites[atlas]);
                             EditorGUI.indentLevel--;
                         }
                     }

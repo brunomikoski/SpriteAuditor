@@ -2,6 +2,7 @@
 {
     public interface IProjectUpdateLoopListener
     {
+        void OnProjectAwake();
         void OnProjectUpdate();
     }
 }

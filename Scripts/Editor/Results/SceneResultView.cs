@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.U2D;
 using UnityEngine.U2D;
+using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
@@ -69,13 +71,13 @@ namespace BrunoMikoski.SpriteAuditor
 
             if (currentFilter.HasFlag(Filter.SingleSprites))
             {
-                if (data.TextureImporter.spriteImportMode != SpriteImportMode.Single)
+                if (data.TextureImporter == null || data.TextureImporter.spriteImportMode != SpriteImportMode.Single)
                     return false;
             }
             
             if (currentFilter.HasFlag(Filter.MultipleSprites))
             {
-                if (data.TextureImporter.spriteImportMode != SpriteImportMode.Multiple)
+                if (data.TextureImporter == null || data.TextureImporter.spriteImportMode != SpriteImportMode.Multiple)
                     return false;
             }
             
@@ -200,9 +202,10 @@ namespace BrunoMikoski.SpriteAuditor
                                 DrawSpriteDataField(spriteData);
                             }
 
+                            SpriteAuditorUtility.DrawDefaultSelectionOptions(sceneToSingleSprites[sceneAsset]
+                                .Select(spriteData => spriteData.Sprite).Cast<Object>().ToList());
                             EditorGUI.indentLevel--;
                         }
-
                         EditorGUILayout.EndVertical();
                     }
 
@@ -212,19 +215,23 @@ namespace BrunoMikoski.SpriteAuditor
                         {
                             EditorGUILayout.BeginVertical("Box");
 
-                            if (SpriteAuditorGUIUtility.DrawObjectFoldout(atlasToUSedSprites.Key,
-                                $"{VisualizationType.Scene.ToString()}_{atlasToUSedSprites.Key}"))
                             {
-                                EditorGUI.indentLevel++;
-                                foreach (SpriteData spriteData in sceneToAtlasToUsedSprites[sceneAsset][
-                                    atlasToUSedSprites.Key])
+                                if (SpriteAuditorGUIUtility.DrawObjectFoldout(atlasToUSedSprites.Key,
+                                    $"{VisualizationType.Scene.ToString()}_{atlasToUSedSprites.Key}"))
                                 {
-                                    DrawSpriteDataField(spriteData);
+                                    EditorGUI.indentLevel++;
+                                    foreach (SpriteData spriteData in sceneToAtlasToUsedSprites[sceneAsset][
+                                        atlasToUSedSprites.Key])
+                                    {
+                                        DrawSpriteDataField(spriteData);
+                                    }
+
+                                    SpriteAuditorUtility.DrawDefaultSelectionOptions(
+                                        sceneToAtlasToUsedSprites[sceneAsset][atlasToUSedSprites.Key]
+                                            .Select(spriteData => spriteData.Sprite).Cast<Object>().ToList());
+                                    EditorGUI.indentLevel--;
                                 }
-
-                                EditorGUI.indentLevel--;
                             }
-
                             EditorGUILayout.EndVertical();
                         }
                     }

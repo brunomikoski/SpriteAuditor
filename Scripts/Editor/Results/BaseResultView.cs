@@ -9,7 +9,6 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public abstract class BaseResultView
     {
-        private SearchField searchField;
         private Vector2 scrollPosition = Vector2.zero;
 
         public abstract void DrawFilterOptions();
@@ -20,7 +19,6 @@ namespace BrunoMikoski.SpriteAuditor
 
         public void DrawResults(SpriteDatabase spriteDatabase)
         {
-            DrawSearch();
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, false, false);
 
             DrawResultsInternal(spriteDatabase);
@@ -45,27 +43,10 @@ namespace BrunoMikoski.SpriteAuditor
             return false;
         }
 
-        private void DrawSearch()
-        {
-            Rect searchRect =
-                GUILayoutUtility.GetRect(1, 1, 18, 18, GUILayout.ExpandWidth(true));
-
-            if (searchField == null)
-                searchField = new SearchField();
-
-            EditorGUI.BeginChangeCheck();
-            string searchText = searchField.OnGUI(searchRect, SpriteAuditorUtility.SearchText);
-            if (EditorGUI.EndChangeCheck())
-            {
-                SpriteAuditorUtility.SearchText = searchText;
-            }
-            EditorGUILayout.Separator();
-        }
-
         protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
             EditorGUILayout.BeginVertical("Box");
-            if (SpriteAuditorGUIUtility.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name))
+            if (SpriteAuditorGUIUtility.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name, true, true))
             {
                 EditorGUI.indentLevel++;
 

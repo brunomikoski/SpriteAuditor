@@ -106,15 +106,24 @@ namespace BrunoMikoski.SpriteAuditor
         public void PrepareForRun()
         {
             for (int i = 0; i < spritesData.Count; i++)
+            {
                 spritesData[i].PrepareForRun();
+            }
         }
 
         public void SizeCheckThresholdChanged()
         {
             for (int i = 0; i < spritesData.Count; i++)
-            {
                 spritesData[i].CheckForSizeFlags();
-            }
+        }
+
+        public void UpdateSpriteData()
+        {
+            for (int i = 0; i < spritesData.Count; i++)
+                spritesData[i].CheckAtlasData();
+
+            SpriteAuditorUtility.ClearSpriteDataDirty();
+            SpriteAuditorUtility.SetMemoryDataDirty();
         }
     }
 }

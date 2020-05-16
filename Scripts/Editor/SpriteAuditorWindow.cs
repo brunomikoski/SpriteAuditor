@@ -2,6 +2,7 @@
 using BrunoMikoski.SpriteAuditor.Serialization;
 using UnityEditor;
 using UnityEditor.Callbacks;
+using UnityEditor.IMGUI.Controls;
 using UnityEditor.U2D;
 using UnityEngine;
 
@@ -14,26 +15,28 @@ namespace BrunoMikoski.SpriteAuditor
         
         private bool isRecording;
         
-        private SpriteFinder spriteFinder = new SpriteFinder();
+        private static SpriteFinder spriteFinder = new SpriteFinder();
 
         private SpriteDatabase cachedSpriteDatabase;
-        private SpriteDatabase SpriteDatabase
+        public SpriteDatabase SpriteDatabase
         {
             get
             {
                 if (cachedSpriteDatabase == null)
-                    LoadOrCreateAtlasResult();
+                    LoadOrCreateDatabase();
                 return cachedSpriteDatabase;
             }
         }
 
-        private bool recordOnPlay = true;
+        private bool recordOnUpdate = true;
         private VisualizationType visualizationType = VisualizationType.Scene;
         private SpriteAuditorEventForwarder spriteAuditorEventForwarder;
         private float spriteUsageSizeThreshold = 0.25f;
 
         private BaseResultView resultView;
         private bool isOpen;
+        private int frameInterval = 1;
+        private SearchField searchField;
 
         private BaseResultView ResultView
         {
@@ -84,6 +87,7 @@ namespace BrunoMikoski.SpriteAuditor
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
             SpriteAuditorUtility.SetMemoryDataDirty();
             SpriteAuditorUtility.SetResultViewDirty();
+            SpriteAuditorUtility.SetSizeCheckThreshold(spriteUsageSizeThreshold);
             isOpen = true;
         }
 
@@ -106,8 +110,7 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 case PlayModeStateChange.EnteredPlayMode:
                 {
-                    if (recordOnPlay)
-                        StartRecording();
+                    StartRecording();
                     break;
                 }
                 case PlayModeStateChange.ExitingPlayMode:
@@ -115,7 +118,7 @@ namespace BrunoMikoski.SpriteAuditor
                     if (isRecording)
                     {
                         StopRecording();
-                        SaveAtlasResult();
+                        StoreDatabase();
                     }
 
                     break;
@@ -126,7 +129,7 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
-        private void LoadOrCreateAtlasResult()
+        private void LoadOrCreateDatabase()
         {
             string storedJson = EditorPrefs.GetString(ATLAS_AUDITOR_STORAGE_KEY, string.Empty);
             cachedSpriteDatabase = new SpriteDatabase();
@@ -135,32 +138,46 @@ namespace BrunoMikoski.SpriteAuditor
                 JsonWrapper.FromJson(storedJson, ref cachedSpriteDatabase);
             
             spriteFinder.SetResult(SpriteDatabase);
-            SpriteAuditorUtility.MemoryDataLoaded();
+            SpriteAuditorUtility.ClearMemoryDataDirty();
         }
 
-        private void SaveAtlasResult()
+        private void StoreDatabase()
         {
             string json = JsonWrapper.ToJson(SpriteDatabase, false);
             EditorPrefs.SetString(ATLAS_AUDITOR_STORAGE_KEY, json);
+            SpriteAuditorUtility.ClearSaveDataDirty();
         }
         
         private void ClearCache()
         {
             EditorPrefs.DeleteKey(ATLAS_AUDITOR_STORAGE_KEY);
             cachedSpriteDatabase = null;
+            SpriteAuditorUtility.SetResultViewDirty();
         }
         
         private void OnGUI()
         {
+            if (SpriteAuditorUtility.IsMemoryDataDirty)
+                LoadOrCreateDatabase();
+
+            if (SpriteAuditorUtility.IsIsSpriteDataDirty)
+                UpdateSpriteData();
+
+            if (SpriteAuditorUtility.IsSaveDataDirty)
+                StoreDatabase();
+                
+            if (SpriteAuditorUtility.IsReferencesDirty)
+            {
+                ResultView.GenerateResults(SpriteDatabase);
+                SpriteAuditorUtility.SetResultViewUpdated();
+            }
+            
             DrawSettings();
             DrawResults();
         }
 
         private void DrawResults()
         {
-            if (SpriteAuditorUtility.IsMemoryDataDirty)
-                LoadOrCreateAtlasResult();
-            
             if (SpriteDatabase == null)
                 return;
 
@@ -188,16 +205,33 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndHorizontal();
 
-            if (SpriteAuditorUtility.IsReferencesDirty)
-            {
-                AtlasCacheUtility.ClearAtlasCache();
-                ResultView.GenerateResults(SpriteDatabase);
-                SpriteAuditorUtility.SetResultViewUpdated();
-            }
-            
+            DrawSearch();
+            SpriteAuditorBatchAction.DrawBatchActions();
             ResultView.DrawResults(SpriteDatabase);
             
             EditorGUILayout.EndVertical();
+        }
+
+        private void UpdateSpriteData()
+        {
+            SpriteDatabase.UpdateSpriteData();
+        }
+
+        private void DrawSearch()
+        {
+            Rect searchRect =
+                GUILayoutUtility.GetRect(1, 1, 18, 18, GUILayout.ExpandWidth(true));
+
+            if (searchField == null)
+                searchField = new SearchField();
+
+            EditorGUI.BeginChangeCheck();
+            string searchText = searchField.OnGUI(searchRect, SpriteAuditorUtility.SearchText);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SpriteAuditorUtility.SearchText = searchText;
+            }
+            EditorGUILayout.Separator();
         }
         
         private void DrawSettings()
@@ -207,8 +241,30 @@ namespace BrunoMikoski.SpriteAuditor
             EditorGUILayout.LabelField("Settings", EditorStyles.toolbarDropDown);
             EditorGUILayout.Space();
 
-            recordOnPlay = EditorGUILayout.Toggle("Record on play", recordOnPlay);
+            EditorGUI.BeginChangeCheck();
+            recordOnUpdate = EditorGUILayout.Toggle("Record Automatically", recordOnUpdate);
+            if (EditorGUI.EndChangeCheck())
+                spriteFinder.SetCaptureOnUpdate(recordOnUpdate);
+            
+            if (recordOnUpdate)
+            {
+                EditorGUI.BeginChangeCheck();
+                frameInterval = EditorGUILayout.IntField("Frame Interval", frameInterval);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    spriteFinder.SetFrameInterval(frameInterval);
+                }
+            }
+            else
+            {
+                bool guiWasEnabled = GUI.enabled;
+                GUI.enabled = true;
+                if (GUILayout.Button("Capture Frame"))
+                    spriteFinder.CaptureFrame();
 
+                GUI.enabled = guiWasEnabled;
+            }
+            
             EditorGUI.BeginChangeCheck();
             spriteUsageSizeThreshold = 
                 EditorGUILayout.Slider("Allowed Size Variation", spriteUsageSizeThreshold, 0, 2);
@@ -216,8 +272,6 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 SpriteAuditorUtility.SetSizeCheckThreshold(spriteUsageSizeThreshold);
                 SpriteDatabase.SizeCheckThresholdChanged();
-                //TODO 
-                //SpriteDatabase.SetAllowedSizeVariation(spriteUsageSizeThreshold);
             }
             
             EditorGUILayout.BeginHorizontal();
@@ -252,17 +306,18 @@ namespace BrunoMikoski.SpriteAuditor
 
         private void StartRecording()
         {
-            if(isRecording)
+            if (isRecording)
                 return;
             isRecording = true;
 
-            AtlasCacheUtility.ClearAtlasCache();
-            LoadOrCreateAtlasResult();
+            LoadOrCreateDatabase();
             SpriteDatabase.PrepareForRun();
             
             GameObject spriteAuditorGameObject = new GameObject("Sprite Auditor Forwarder");
             
             spriteAuditorEventForwarder = spriteAuditorGameObject.AddComponent<SpriteAuditorEventForwarder>();
+            spriteFinder.SetFrameInterval(frameInterval);
+            spriteFinder.SetCaptureOnUpdate(recordOnUpdate);
             spriteAuditorEventForwarder.SetListener(spriteFinder);
             DontDestroyOnLoad(spriteAuditorEventForwarder.gameObject);
         }

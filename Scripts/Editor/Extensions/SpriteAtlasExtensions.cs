@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.U2D;
 
 namespace UnityEngine.U2D
 {
-    public static partial class EditorSpriteAtlasExtensions
+    public static partial class SpriteAtlasExtensions
     {
         public static float GetVariantScale(this SpriteAtlas spriteAtlas)
         {
@@ -56,40 +55,22 @@ namespace UnityEngine.U2D
 
                 if (packable is DefaultAsset defaultAsset)
                 {
-                    List<Sprite> sprites = GetAllSpritesFromFolder(AssetDatabase.GetAssetPath(defaultAsset));
-                    resultSprites.AddRange(sprites);
+                    resultSprites.AddRange(defaultAsset.GetChildrenObjectsOfType<Sprite>());
                 }
-                else if (packable is Sprite || packable is Texture2D)
+                else if (packable is Sprite sprite)
+                {
+                    resultSprites.Add(sprite);
+                }
+                else if (packable is Texture2D)
                 {
                     string path = AssetDatabase.GetAssetPath(packable);
+
                     resultSprites.AddRange(AssetDatabase.LoadAllAssetsAtPath(path).Where(o => o is Sprite)
                         .Cast<Sprite>().ToArray());
                 }
             }
 
             return resultSprites;
-        }
-
-        private static List<Sprite> GetAllSpritesFromFolder(string targetFolder)
-        {
-            List<Sprite> result = new List<Sprite>();
-            string[] spritesGUIDs = AssetDatabase.FindAssets("t:Sprite", new[] {targetFolder});
-            Uri rootFolder = new Uri(Path.GetFullPath(targetFolder));
-            for (int i = 0; i < spritesGUIDs.Length; i++)
-            {
-                string spritesGUID = spritesGUIDs[i];
-                string spritePath = AssetDatabase.GUIDToAssetPath(spritesGUID);
-                Uri spriteUri = new Uri(Path.GetFullPath(spritePath));
-
-                if (rootFolder != spriteUri && rootFolder.IsBaseOf(spriteUri))
-                {
-                    Sprite[] allSprites = AssetDatabase.LoadAllAssetsAtPath(spritePath).Where(o => o is Sprite)
-                        .Cast<Sprite>().ToArray();
-                    result.AddRange(allSprites);
-                }
-            }
-
-            return result;
         }
     }
 }
