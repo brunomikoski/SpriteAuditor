@@ -73,6 +73,7 @@ namespace BrunoMikoski.SpriteAuditor
                         MoveSpritesToAtlas(null);
                     }
                 }
+                EditorGUILayout.EndHorizontal();
                 
                 EditorGUILayout.BeginHorizontal();
                 {
