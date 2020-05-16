@@ -19,12 +19,10 @@ namespace BrunoMikoski.SpriteAuditor
         }
         
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
-        private static Dictionary<SpriteAtlas, float> atlasToScale = new Dictionary<SpriteAtlas, float>();
 
         public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();
-            atlasToScale.Clear();
 
             string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
             
@@ -48,7 +46,6 @@ namespace BrunoMikoski.SpriteAuditor
                 }
                 
                 atlasToAllSprites.Add(atlas, sprites);
-                atlasToScale.Add(atlas, scale);
             }
 
             SpriteAuditorUtility.ClearAtlasCacheDirty();
@@ -91,15 +88,6 @@ namespace BrunoMikoski.SpriteAuditor
             }
             spriteAtlas = null;
             return false;
-        }
-
-        public static bool TryGetAtlasScale(SpriteAtlas spriteAtlas, out float atlasScale)
-        {
-            if (SpriteAuditorUtility.IsAtlasesDirty)
-                CacheKnowAtlases();
-
-            atlasScale = 1;
-            return atlasToScale.TryGetValue(spriteAtlas, out atlasScale); 
         }
 
         public static List<SpriteAtlas> GetAllKnowAtlases()

@@ -77,12 +77,15 @@ namespace BrunoMikoski.SpriteAuditor
 
         public static void SetBestSizeForTexture(SpriteData spriteData)
         {
-            TryFindSmallerSizeTexture(spriteData, out int smallerSize);
-
-            spriteData.TextureImporter.maxTextureSize = smallerSize;
-            spriteData.TextureImporter.SaveAndReimport();
-            spriteData.CheckForSizeFlags();
-            SetResultViewDirty();
+            if (TryFindSmallerSizeTexture(spriteData, out int smallerSize))
+            {
+                int previousSize = spriteData.TextureImporter.maxTextureSize;
+                spriteData.TextureImporter.maxTextureSize = smallerSize;
+                spriteData.TextureImporter.SaveAndReimport();
+                spriteData.CheckForSizeFlags();
+                SetResultViewDirty();
+                Debug.Log($"Update {spriteData.Sprite} maxTextureSize from: {previousSize} to: {smallerSize}");
+            }
         }
 
         private static bool TryFindSmallerSizeTexture(SpriteData spriteData, out int smallerSize)
@@ -136,24 +139,31 @@ namespace BrunoMikoski.SpriteAuditor
             return spriteData.TextureImporter.maxTextureSize != smallerSize;
         }
 
-        // public static bool CanTweakMaxSize(SpriteData spriteData)
-        // {
-        //     if (!spriteData.MaximumUsageSize.HasValue || spriteData.TextureImporter == null)
-        //         return false;
-        //
-        //     int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));
-        //     for (int i = 0; i < AVAILABLE_SPRITE_SIZES.Length-1; i++)
-        //     {
-        //         int current = AVAILABLE_SPRITE_SIZES[i];
-        //         int next = AVAILABLE_SPRITE_SIZES[i + 1];
-        //
-        //         if (current > desired && desired <= next)
-        //             return spriteData.TextureImporter.maxTextureSize != current;
-        //     }
-        //
-        //     return false;
-        //
-        // }
+        public static bool CanTweakMaxSize(SpriteData spriteData)
+        {
+            if (!spriteData.MaximumUsageSize.HasValue)
+                return false;
+        
+            int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));
+
+            if (desired < AVAILABLE_SPRITE_SIZES[0])
+                return false;
+            
+            for (int i = 0; i < AVAILABLE_SPRITE_SIZES.Length-1; i++)
+            {
+                int current = AVAILABLE_SPRITE_SIZES[i];
+                int next = AVAILABLE_SPRITE_SIZES[i + 1];
+
+                if (current > desired && desired <= next)
+                {
+                    if (spriteData.TextureImporter != null)
+                        return spriteData.TextureImporter.maxTextureSize != current;
+                }
+            }
+        
+            return false;
+        
+        }
 
 
         public static void SetMemoryDataDirty()

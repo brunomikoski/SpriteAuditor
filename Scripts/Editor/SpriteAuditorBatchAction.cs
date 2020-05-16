@@ -73,10 +73,38 @@ namespace BrunoMikoski.SpriteAuditor
                         MoveSpritesToAtlas(null);
                     }
                 }
+                
+                EditorGUILayout.BeginHorizontal();
+                {
+                    if (GUILayout.Button($"Try to fix Size of {selectedObjectsCount} selected objects",
+                        EditorStyles.miniButton))
+                    {
+                        TryToFixSizeOfSelectedObjects();
+                        MoveSpritesToAtlas(null);
+                    }
+                }
                 EditorGUILayout.EndHorizontal();
             }
             
             EditorGUILayout.EndVertical();
+        }
+
+        private static void TryToFixSizeOfSelectedObjects()
+        {
+            foreach (Object selectedObject in SpriteAuditorUtility.SelectedObjects)
+            {
+                if (selectedObject is Sprite sprite)
+                {
+                    if (SpriteAuditorWindow.GetWindowInstance().SpriteDatabase
+                        .TryGetSpriteDataBySprite(sprite, out SpriteData spriteData))
+                    {
+                        if (SpriteAuditorUtility.CanFixSpriteData(spriteData))
+                        {
+                            SpriteAuditorUtility.SetBestSizeForTexture(spriteData);
+                        }
+                    }
+                }
+            }
         }
 
         private static void UpdateCurrentState()

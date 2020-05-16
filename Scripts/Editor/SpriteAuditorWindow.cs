@@ -18,7 +18,7 @@ namespace BrunoMikoski.SpriteAuditor
         private static SpriteFinder spriteFinder = new SpriteFinder();
 
         private SpriteDatabase cachedSpriteDatabase;
-        private SpriteDatabase SpriteDatabase
+        public SpriteDatabase SpriteDatabase
         {
             get
             {
@@ -87,6 +87,7 @@ namespace BrunoMikoski.SpriteAuditor
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
             SpriteAuditorUtility.SetMemoryDataDirty();
             SpriteAuditorUtility.SetResultViewDirty();
+            SpriteAuditorUtility.SetSizeCheckThreshold(spriteUsageSizeThreshold);
             isOpen = true;
         }
 

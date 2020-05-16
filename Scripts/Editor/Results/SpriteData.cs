@@ -140,7 +140,8 @@ namespace BrunoMikoski.SpriteAuditor
             {
                 cachedSpriteAtlas = spriteAtlas;
                 spriteAtlasGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(spriteAtlas));
-                if (AtlasCacheUtility.TryGetAtlasScale(spriteAtlas, out atlasScale))
+                atlasScale = spriteAtlas.GetVariantScale();
+                if (atlasScale != 1.0f)
                     spriteUsageFlags |= SpriteUsageFlags.UsingScaledAtlasSize;
             }
             else
@@ -231,6 +232,9 @@ namespace BrunoMikoski.SpriteAuditor
             float differenceMagnitude = sizeDifference.magnitude / SpriteSize.magnitude;
             if (Mathf.Abs(differenceMagnitude) > SpriteAuditorUtility.SpriteUsageSizeThreshold)
             {
+                if (!SpriteAuditorUtility.CanTweakMaxSize(this))
+                    return;
+
                 if (maximumUsageSize.Value.sqrMagnitude > SpriteSize.sqrMagnitude)
                 {
                     spriteUsageFlags |= SpriteUsageFlags.UsedBiggerThanSpriteRect;
@@ -239,7 +243,8 @@ namespace BrunoMikoski.SpriteAuditor
                 {
                     spriteUsageFlags |= SpriteUsageFlags.UsedSmallerThanSpriteRect;
                 }
-            }}
+            }
+        }
 
         private SpriteUseData GetOrCreateSpriteUsageData(GameObject instance, string usagePath)
         {
