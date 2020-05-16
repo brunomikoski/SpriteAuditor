@@ -194,6 +194,7 @@ namespace BrunoMikoski.SpriteAuditor
             if (EditorGUI.EndChangeCheck())
             {
                 CreateResultViewByVisualizationType();
+                SpriteAuditorUtility.ClearSelection();
                 SpriteAuditorUtility.SetResultViewDirty();
             }
             
