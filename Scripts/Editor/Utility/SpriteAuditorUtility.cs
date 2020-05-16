@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Purchasing;
 using UnityEngine;
+using EditorGUILayout = UnityEditor.Experimental.Networking.PlayerConnection.EditorGUILayout;
 using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
@@ -11,11 +13,21 @@ namespace BrunoMikoski.SpriteAuditor
     {
         private static int[] AVAILABLE_SPRITE_SIZES = {32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
 
-        private static bool isReferencesDirty;
+        private static bool isReferencesDirty = true;
         public static bool IsReferencesDirty => isReferencesDirty;
 
-        private static bool isMemoryDataDirty;
+        private static bool isMemoryDataDirty = true;
         public static bool IsMemoryDataDirty => isMemoryDataDirty;
+        
+        private static bool isAtlasesDirty = true;
+        public static bool IsAtlasesDirty => isAtlasesDirty;
+        
+        private static bool isSpriteDataDirty;
+        public static bool IsIsSpriteDataDirty => isSpriteDataDirty;
+
+        private static bool isSaveDataDirty;
+        public static bool IsSaveDataDirty => isSaveDataDirty;
+
 
         private static SceneAsset cachedDontDestroyOnLoadSceneAsset;
 
@@ -57,6 +69,11 @@ namespace BrunoMikoski.SpriteAuditor
             }
         }
 
+        private static HashSet<Object> selectedObjects = new HashSet<Object>();
+        public static HashSet<Object> SelectedObjects => selectedObjects;
+
+        public static bool HasSelectedItems => selectedObjects.Count > 0;
+
 
         public static void SetBestSizeForTexture(SpriteData spriteData)
         {
@@ -65,11 +82,18 @@ namespace BrunoMikoski.SpriteAuditor
             spriteData.TextureImporter.maxTextureSize = smallerSize;
             spriteData.TextureImporter.SaveAndReimport();
             spriteData.CheckForSizeFlags();
+            SetResultViewDirty();
         }
 
         private static bool TryFindSmallerSizeTexture(SpriteData spriteData, out int smallerSize)
         {
             if (!spriteData.MaximumUsageSize.HasValue)
+            {
+                smallerSize = -1;
+                return false;
+            }
+
+            if (spriteData.TextureImporter == null)
             {
                 smallerSize = -1;
                 return false;
@@ -112,24 +136,24 @@ namespace BrunoMikoski.SpriteAuditor
             return spriteData.TextureImporter.maxTextureSize != smallerSize;
         }
 
-        public static bool CanTweakMaxSize(SpriteData spriteData)
-        {
-            if (!spriteData.MaximumUsageSize.HasValue || spriteData.TextureImporter == null)
-                return false;
-
-            int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));
-            for (int i = 0; i < AVAILABLE_SPRITE_SIZES.Length-1; i++)
-            {
-                int current = AVAILABLE_SPRITE_SIZES[i];
-                int next = AVAILABLE_SPRITE_SIZES[i + 1];
-
-                if (current > desired && desired <= next)
-                    return spriteData.TextureImporter.maxTextureSize != current;
-            }
-
-            return false;
-
-        }
+        // public static bool CanTweakMaxSize(SpriteData spriteData)
+        // {
+        //     if (!spriteData.MaximumUsageSize.HasValue || spriteData.TextureImporter == null)
+        //         return false;
+        //
+        //     int desired = Mathf.RoundToInt(Mathf.Max(spriteData.MaximumUsageSize.Value.x, spriteData.MaximumUsageSize.Value.y));
+        //     for (int i = 0; i < AVAILABLE_SPRITE_SIZES.Length-1; i++)
+        //     {
+        //         int current = AVAILABLE_SPRITE_SIZES[i];
+        //         int next = AVAILABLE_SPRITE_SIZES[i + 1];
+        //
+        //         if (current > desired && desired <= next)
+        //             return spriteData.TextureImporter.maxTextureSize != current;
+        //     }
+        //
+        //     return false;
+        //
+        // }
 
 
         public static void SetMemoryDataDirty()
@@ -137,7 +161,7 @@ namespace BrunoMikoski.SpriteAuditor
             isMemoryDataDirty = true;
         }
 
-        public static void MemoryDataLoaded()
+        public static void ClearMemoryDataDirty()
         {
             isMemoryDataDirty = false;
         }
@@ -150,6 +174,46 @@ namespace BrunoMikoski.SpriteAuditor
         public static void SetResultViewUpdated()
         {
             isReferencesDirty = false;
+        }
+        
+        public static void SetAtlasCacheDirty()
+        {
+            isAtlasesDirty = true;
+        }
+
+        public static void ClearAtlasCacheDirty()
+        {
+            isAtlasesDirty = false;
+        }
+        
+        public static void SetSpriteDataDirty()
+        {
+            isSpriteDataDirty = true;
+        }
+
+        public static void ClearSpriteDataDirty()
+        {
+            isSpriteDataDirty = false;
+        }
+        
+        public static void SetSaveDataDirty()
+        {
+            isSaveDataDirty = true;
+        }
+
+
+        public static void ClearSaveDataDirty()
+        {
+            isSaveDataDirty = false;
+        }
+        
+        public static void SetAllDirty()
+        {
+            SetAtlasCacheDirty();
+            SetSpriteDataDirty();
+            SetResultViewDirty();
+            SetMemoryDataDirty();
+            SetSaveDataDirty();
         }
         
         [MenuItem("Assets/Sprite Auditor/Find Results of Selected Sprites")]
@@ -205,6 +269,48 @@ namespace BrunoMikoski.SpriteAuditor
         public static void SetSizeCheckThreshold(float targetSpriteUsageSizeThreshold)
         {
             spriteUsageSizeThreshold = targetSpriteUsageSizeThreshold;
+        }
+
+        public static bool IsObjectSelected<T>(T targetObject) where T : Object
+        {
+            return selectedObjects.Contains(targetObject);
+        }
+        
+        public static void ClearSelection()
+        {
+            selectedObjects.Clear();
+        }
+
+        public static void SetObjectSelected<T>(T targetObject, bool isObjectsSelected) where T : Object
+        {
+            if (isObjectsSelected)
+                selectedObjects.Add(targetObject);
+            else
+                selectedObjects.Remove(targetObject);
+        }
+
+
+        public static void DrawDefaultSelectionOptions(IEnumerable<Object> objs)
+        {
+            GUILayout.BeginHorizontal();
+            {
+                if (GUILayout.Button("Select None", EditorStyles.miniButtonLeft))
+                {
+                    foreach (Object o in objs)
+                    {
+                        selectedObjects.Remove(o);
+                    }
+                }
+                
+                if (GUILayout.Button("Select All", EditorStyles.miniButtonRight))
+                {
+                    foreach (Object o in objs)
+                    {
+                        selectedObjects.Add(o);
+                    }
+                }
+            }
+            GUILayout.EndHorizontal();
         }
     }
 }

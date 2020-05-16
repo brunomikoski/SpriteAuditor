@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
 
@@ -8,11 +9,18 @@ namespace BrunoMikoski.SpriteAuditor
 {
     public static class AtlasCacheUtility
     {
+        public enum SpriteReferenceType
+        {
+            None,
+            SpriteReference,
+            SingleTextureType,
+            MultipleTextureType,
+            DefaultAssetReference
+        }
+        
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
         private static Dictionary<SpriteAtlas, float> atlasToScale = new Dictionary<SpriteAtlas, float>();
 
-        private static bool hasDataCached;
-        
         public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();
@@ -43,14 +51,32 @@ namespace BrunoMikoski.SpriteAuditor
                 atlasToScale.Add(atlas, scale);
             }
 
-            hasDataCached = true;
+            SpriteAuditorUtility.ClearAtlasCacheDirty();
+        }
+
+        public static bool TryGetAtlasesForSprite(Sprite targetSprite, out List<SpriteAtlas> atlases)
+        {
+            if (SpriteAuditorUtility.IsAtlasesDirty)
+                CacheKnowAtlases();
+            
+            atlases = new List<SpriteAtlas>();
+            foreach (var atlasToSprites in atlasToAllSprites)
+            {
+                for (int i = 0; i < atlasToSprites.Value.Length; i++)
+                {
+                    if (atlasToSprites.Value[i] == targetSprite)
+                        atlases.Add(atlasToSprites.Key);
+                }
+            }
+
+            return atlases.Count > 0;
         }
 
         public static bool TryGetAtlasForSprite(Sprite targetSprite, out SpriteAtlas spriteAtlas)
         {
-            if (!hasDataCached)
+            if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();
-            
+
             foreach (var atlasToSprites in atlasToAllSprites)
             {
                 for (int i = 0; i < atlasToSprites.Value.Length; i++)
@@ -69,7 +95,7 @@ namespace BrunoMikoski.SpriteAuditor
 
         public static bool TryGetAtlasScale(SpriteAtlas spriteAtlas, out float atlasScale)
         {
-            if (!hasDataCached)
+            if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();
 
             atlasScale = 1;
@@ -78,6 +104,9 @@ namespace BrunoMikoski.SpriteAuditor
 
         public static List<SpriteAtlas> GetAllKnowAtlases()
         {
+            if (SpriteAuditorUtility.IsAtlasesDirty)
+                CacheKnowAtlases();
+
             List<SpriteAtlas> atlases = new List<SpriteAtlas>();
             string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
             
@@ -91,21 +120,108 @@ namespace BrunoMikoski.SpriteAuditor
 
             return atlases;
         }
-
-        public static void ClearAtlasCache()
-        {
-            hasDataCached = false;
-        }
-
+        
         public static Sprite[] GetAllSpritesFromAtlas(SpriteAtlas atlas)
         {
-            if (!hasDataCached)
+            if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();
-            
+
             if (atlasToAllSprites.TryGetValue(atlas, out Sprite[] sprites))
                 return sprites;
 
             return new Sprite[0];
+        }
+
+        public static SpriteReferenceType GetSpriteToAtlasReferenceType(Sprite targetSprite, SpriteAtlas targetAtlas)
+        {
+            if (SpriteAuditorUtility.IsAtlasesDirty)
+                CacheKnowAtlases();
+
+            Object[] packables = targetAtlas.GetPackables();
+            for (int i = 0; i < packables.Length; i++)
+            {
+                Object packable = packables[i];
+
+                if (packable is Sprite sprite)
+                {
+                    if (sprite == targetSprite)
+                        return SpriteReferenceType.SpriteReference;
+                }
+                else if (packable is Texture2D texture2d)
+                {
+                    if (texture2d.TryLoadSprites(out Sprite[] sprites))
+                    {
+                        foreach (Sprite withinSprite in sprites)
+                        {
+                            if (withinSprite == targetSprite)
+                            {
+                                if (sprites.Length == 1)
+                                    return SpriteReferenceType.SingleTextureType;
+                                return SpriteReferenceType.MultipleTextureType;
+                            }
+                        }
+                    }
+                }
+                else if (packable is DefaultAsset defaultAsset)
+                {
+                    List<Sprite> allSpritesFromFolder = defaultAsset.GetChildrenObjectsOfType<Sprite>();
+                    for (int j = 0; j < allSpritesFromFolder.Count; j++)
+                    {
+                        Sprite insideFolderSprite = allSpritesFromFolder[j];
+                        if (insideFolderSprite == targetSprite)
+                        {
+                            return SpriteReferenceType.DefaultAssetReference;
+                        }
+                    }
+                }
+            }
+
+            return SpriteReferenceType.None;
+        }
+
+        public static bool TryRemoveSpriteFromAtlas(Sprite targetSprite, SpriteAtlas spriteAtlas)
+        {
+            if (SpriteAuditorUtility.IsAtlasesDirty)
+                CacheKnowAtlases();
+
+            SpriteReferenceType referenceType = GetSpriteToAtlasReferenceType(targetSprite, spriteAtlas);
+            switch (referenceType)
+            {
+                case SpriteReferenceType.None:
+                {
+                    Debug.LogWarning($"No reference between {targetSprite} to {spriteAtlas} found");
+                    return false;
+                }
+                case SpriteReferenceType.SpriteReference:
+                {
+                    spriteAtlas.Remove(new [] {targetSprite as Object});
+                    EditorUtility.SetDirty(spriteAtlas);
+                    SpriteAuditorUtility.SetAtlasCacheDirty();
+                    Debug.Log($"Removed {targetSprite} from {spriteAtlas}");
+                    return true;
+                }
+                case SpriteReferenceType.SingleTextureType:
+                {
+                    Object mainTexture = AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GetAssetPath(targetSprite));
+                    spriteAtlas.Remove(new[] {mainTexture});
+                    EditorUtility.SetDirty(spriteAtlas);
+                    SpriteAuditorUtility.SetAtlasCacheDirty();
+                    Debug.Log($"Removed {targetSprite} from {spriteAtlas}");
+                    return true;
+                }
+                case SpriteReferenceType.MultipleTextureType:
+                {
+                    Debug.LogError($"Cannot remove {targetSprite} from {spriteAtlas} since its a Texture with Multiple Sprites");
+                    return false;
+                }
+                case SpriteReferenceType.DefaultAssetReference:
+                {
+                    Debug.LogError($"Cannot remove {targetSprite} from {spriteAtlas} since uses a Folder Reference");
+                    return false;
+                }
+            }
+
+            return false;
         }
     }
 }

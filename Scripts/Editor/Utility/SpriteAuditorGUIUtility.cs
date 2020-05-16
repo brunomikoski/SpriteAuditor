@@ -46,7 +46,7 @@ namespace BrunoMikoski.SpriteAuditor
             return keyToFoldout[foldoutKey];
         }
         
-        public static bool DrawObjectFoldout<T>(T targetObject, string foldoutKey, bool showFoldout = true) where T : Object
+        public static bool DrawObjectFoldout<T>(T targetObject, string foldoutKey, bool showFoldout = true, bool showSelection = false) where T : Object
         {
             if (!keyToFoldout.ContainsKey(foldoutKey))
                 keyToFoldout.Add(foldoutKey, false);
@@ -60,14 +60,41 @@ namespace BrunoMikoski.SpriteAuditor
                     fixedWidth = 5
                 };
                     
-                keyToFoldout[foldoutKey] = EditorGUILayout.Foldout(keyToFoldout[foldoutKey], "", true, style);
+                keyToFoldout[foldoutKey] = EditorGUILayout.Foldout(keyToFoldout[foldoutKey], "", false, style);
                 GUILayout.Space(-34);
             }
-                    
-            EditorGUILayout.ObjectField(targetObject, typeof(T), false);
+
+
+            GUILayoutOption[] guiLayoutOptions = 
+            {
+                GUILayout.ExpandWidth(true)
+            };
+            EditorGUILayout.ObjectField(targetObject, typeof(T), false, guiLayoutOptions);
+
+            if (showSelection)
+                AddObjectSelectionToggle(targetObject);
+            
             EditorGUILayout.EndHorizontal();
 
             return keyToFoldout[foldoutKey];
+        }
+
+        private static void AddObjectSelectionToggle<T>(T targetObject) where T : Object
+        {
+            EditorGUI.BeginChangeCheck();
+            GUILayoutOption[] guiLayoutOptions = 
+            {
+                GUILayout.ExpandWidth(false),
+                GUILayout.Width(15)
+            };
+            
+            bool isObjectsSelected =
+                EditorGUILayout.Toggle(SpriteAuditorUtility.IsObjectSelected(targetObject), EditorStyles.toggle, guiLayoutOptions);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SpriteAuditorUtility.SetObjectSelected(targetObject, isObjectsSelected);
+            }
+            
         }
     }
 }
