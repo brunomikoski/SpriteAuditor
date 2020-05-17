@@ -13,6 +13,7 @@ but also helping you see witch texture are in use that could be smaller.
 
 
 ## Features
+- Captures frame by frame all the sprites usages, so I can recognize when a Sprite has transform scales and can show what would be the ideals size for that sprite.
 - Records the session of the game identifying sprites been used by the UI or SpriteRender giving you valuable information
 - Allow customization of specific listeners to report special cases sprite usages
 - Give you insights about images to canvas size, allow you understand if you can increase or decrease the image size
