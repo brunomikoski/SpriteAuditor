@@ -50,7 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Basic implementation 
 
 ## [Unreleased]
- - 
+ - Add support to recognize sprites inside multiple atlas
+ - Add support to detect similar sprites in the game?
+ - Added a corelation between active sprites at the same time to suggest possible sprites that should be packed together. 
 
 [0.2.1]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/badawe/SpriteAuditor/releases/tag/v0.2.0
