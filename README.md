@@ -1,11 +1,11 @@
 # Sprite Auditor
 
-[Wrote a small guide about how to use it](https://medium.com/@bada/optimizing-build-size-and-performance-with-proper-sprite-setup-7c76c91626b6)
-
 
 [![openupm](https://img.shields.io/npm/v/com.brunomikoski.spriteauditor?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.brunomikoski.spriteauditor/)
 
 ![](https://img.shields.io/github/followers/badawe?label=Follow&style=social) ![](https://img.shields.io/twitter/follow/brunomikoski?style=social)
+
+[Wrote a small guide about how to use it](https://medium.com/@bada/optimizing-build-size-and-performance-with-proper-sprite-setup-7c76c91626b6)
 
 ![inspector](/Documentation~/home-view.png)
 
