@@ -56,3 +56,9 @@ You can also install via git URL by adding this entry in your **manifest.json**
 ```
 from Window->Package Manager, click on the + sign and Add from git: https://github.com/badawe/SpriteAuditor.git
 ```
+
+## License TL:DR
+- You can freely use Sprite Auditor in both commercial and non-commercial projects
+- You can redistribute verbatim copies of the code, along with any readme files and attributions
+- You can modify the code only for your own use and you cannot redistribute modified versions (but you can send pull requests to me)
+
