@@ -57,6 +57,8 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField] 
         private float atlasScale = 1;
 
+        public string SpriteAssetPath => $"{spriteTexturePath}/{spriteName}";
+
         private Sprite cachedSprite;
         public Sprite Sprite
         {
@@ -109,6 +111,7 @@ namespace BrunoMikoski.SpriteAuditor
                 return cachedTextureImporter;
             }
         }
+
 
         private bool firstSizeReport = true;
 
