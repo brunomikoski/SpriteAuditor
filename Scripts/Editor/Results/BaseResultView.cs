@@ -46,7 +46,7 @@ namespace BrunoMikoski.SpriteAuditor
         protected virtual void DrawSpriteDataField(SpriteData spriteData)
         {
             EditorGUILayout.BeginVertical("Box");
-            if (SpriteAuditorGUIUtility.DrawObjectFoldout(spriteData.Sprite, spriteData.Sprite.name, true, true))
+            if (SpriteAuditorGUIUtility.DrawObjectFoldout(spriteData.Sprite, spriteData.SpriteAssetPath, true, true))
             {
                 EditorGUI.indentLevel++;
 

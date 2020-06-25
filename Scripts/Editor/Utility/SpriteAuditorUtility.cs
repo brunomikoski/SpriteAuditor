@@ -156,8 +156,10 @@ namespace BrunoMikoski.SpriteAuditor
 
                 if (current > desired && desired <= next)
                 {
-                    if (spriteData.TextureImporter != null)
-                        return spriteData.TextureImporter.maxTextureSize != current;
+                    if (spriteData.TextureImporter == null)
+                        return true;
+
+                    return spriteData.TextureImporter.maxTextureSize != current;
                 }
             }
         
