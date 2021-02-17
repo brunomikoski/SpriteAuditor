@@ -1,7 +1,7 @@
 {
   "name": "com.brunomikoski.spriteauditor",
   "displayName": "Sprite Auditor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "unity": "2018.4",
   "description": "The missing tool for sprite management",
   "keywords": [
@@ -10,12 +10,12 @@
     "bundlezie"
   ],
   "category": "editor extensions",
-  "homepage": "https://github.com/badawe/SpriteAuditor",
+  "homepage": "https://github.com/brunomikoski/SpriteAuditor",
   "repository": {
     "type": "git",
-    "url": "https://github.com/badawe/SpriteAuditor.git"
+    "url": "https://github.com/brunomikoski/SpriteAuditor.git"
   },
-  "bugs": "https://github.com/badawe/SpriteAuditor/issues",
+  "bugs": "https://github.com/brunomikoski/SpriteAuditor/issues",
     "author": {
     "name": "Bruno Mikoski",
     "url": "https://www.brunomikoski.com"
