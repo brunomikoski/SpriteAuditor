@@ -15,5 +15,9 @@
     "type": "git",
     "url": "https://github.com/badawe/SpriteAuditor.git"
   },
-  "bugs": "https://github.com/badawe/SpriteAuditor/issues"
+  "bugs": "https://github.com/badawe/SpriteAuditor/issues",
+    "author": {
+    "name": "Bruno Mikoski",
+    "url": "https://www.brunomikoski.com"
+  }
 }
