@@ -22,6 +22,9 @@ namespace BrunoMikoski.SpriteAuditor
             if (buttonImage == null)
                 return;
 
+            if (buttonImage.sprite == null)
+                return;
+            
             SpriteData spriteData = GetOrCreateSpriteData(buttonImage.sprite);
             spriteData.ReportUse(buttonImage);
 

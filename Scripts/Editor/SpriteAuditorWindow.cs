@@ -67,7 +67,7 @@ namespace BrunoMikoski.SpriteAuditor
         }
         
 
-        [MenuItem("Tools/Sprite Auditor")]
+        [MenuItem("Window/Analysis/Sprite Auditor")]
         public static void OpenWindow()
         {
             GetWindowInstance().Show();
