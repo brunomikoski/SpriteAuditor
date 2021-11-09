@@ -18,8 +18,6 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField] 
         private string spriteTextureGUID;
         [SerializeField] 
-        private string spriteAtlasGUID;
-        [SerializeField] 
         private string spriteName;
         [SerializeField] 
         private Vector3? maximumUsageSize = null;
@@ -88,13 +86,7 @@ namespace BrunoMikoski.SpriteAuditor
             get
             {
                 if (cachedSpriteAtlas == null)
-                {
-                    if (!string.IsNullOrEmpty(spriteAtlasGUID))
-                    {
-                        cachedSpriteAtlas =
-                            AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(spriteAtlasGUID));
-                    }
-                }
+                    AtlasCacheUtility.TryGetAtlasForSprite(Sprite, out cachedSpriteAtlas);
 
                 return cachedSpriteAtlas;
             }
@@ -142,7 +134,6 @@ namespace BrunoMikoski.SpriteAuditor
             if (AtlasCacheUtility.TryGetAtlasForSprite(cachedSprite, out SpriteAtlas spriteAtlas))
             {
                 cachedSpriteAtlas = spriteAtlas;
-                spriteAtlasGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(spriteAtlas));
                 atlasScale = spriteAtlas.GetVariantScale();
                 if (atlasScale != 1.0f)
                     spriteUsageFlags |= SpriteUsageFlags.UsingScaledAtlasSize;
@@ -150,7 +141,6 @@ namespace BrunoMikoski.SpriteAuditor
             else
             {
                 cachedSpriteAtlas = null;
-                spriteAtlasGUID = String.Empty;
             }
         }
 

@@ -11,7 +11,6 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField]
         private List<SpriteData> spritesData = new List<SpriteData>(512);
         public List<SpriteData> SpritesData => spritesData;
-    
 
         public void ReportButton(Button button)
         {

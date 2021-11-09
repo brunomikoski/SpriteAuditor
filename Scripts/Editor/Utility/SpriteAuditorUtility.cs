@@ -75,6 +75,18 @@ namespace BrunoMikoski.SpriteAuditor
         public static bool HasSelectedItems => selectedObjects.Count > 0;
 
 
+        [InitializeOnLoadMethod]
+        public static void Initialize()
+        {
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange obj)
+        {
+            if (AtlasCacheUtility.UsingLegacySpritePacker)
+                SetAtlasCacheDirty();
+        }
+
         public static void SetBestSizeForTexture(SpriteData spriteData)
         {
             if (TryFindSmallerSizeTexture(spriteData, out int smallerSize))

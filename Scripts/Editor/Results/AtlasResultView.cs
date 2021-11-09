@@ -37,11 +37,11 @@ namespace BrunoMikoski.SpriteAuditor
             if (spriteDatabase?.SpritesData == null)
                 return;
 
-            
             atlasToUsedSprites.Clear();
             atlasToNotUsedSprites.Clear();
-   
-            filteredAtlas = AtlasCacheUtility.GetAllKnowAtlases().Where(atlas => MatchFilter(atlas, spriteDatabase))
+
+            filteredAtlas = AtlasCacheUtility.GetAllKnowAtlases()
+                .Where(atlas => MatchFilter(atlas, spriteDatabase))
                 .OrderBy(atlas => atlas.name).ToArray();
             
             SpriteData[] validSprites = spriteDatabase.SpritesData.Where(ValidSpriteData).Where(data => data.IsInsideAtlas())

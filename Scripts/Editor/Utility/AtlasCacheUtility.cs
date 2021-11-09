@@ -23,12 +23,15 @@ namespace BrunoMikoski.SpriteAuditor
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
         private static Dictionary<string, SpriteAtlas> tagToSpriteAtlas = new Dictionary<string, SpriteAtlas>();
 
+        public static bool UsingLegacySpritePacker => EditorSettings.spritePackerMode == SpritePackerMode.BuildTimeOnly ||
+                                                       EditorSettings.spritePackerMode == SpritePackerMode.AlwaysOn;
+
         public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();
+            tagToSpriteAtlas.Clear();
 
-            if (EditorSettings.spritePackerMode == SpritePackerMode.BuildTimeOnly ||
-                EditorSettings.spritePackerMode == SpritePackerMode.AlwaysOn)
+            if (UsingLegacySpritePacker)
             {
                 CacheLegacySpriteAtlases();
             }
@@ -120,6 +123,9 @@ namespace BrunoMikoski.SpriteAuditor
             atlases = new List<SpriteAtlas>();
             foreach (var atlasToSprites in atlasToAllSprites)
             {
+                if (atlasToSprites.Key == null)
+                    continue;
+                
                 for (int i = 0; i < atlasToSprites.Value.Length; i++)
                 {
                     if (atlasToSprites.Value[i] == targetSprite)
