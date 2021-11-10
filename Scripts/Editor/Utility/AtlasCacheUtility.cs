@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
+using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {
@@ -19,13 +21,32 @@ namespace BrunoMikoski.SpriteAuditor
         }
         
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
+        private static Dictionary<string, SpriteAtlas> tagToSpriteAtlas = new Dictionary<string, SpriteAtlas>();
+
+        public static bool UsingLegacySpritePacker => EditorSettings.spritePackerMode == SpritePackerMode.BuildTimeOnly ||
+                                                       EditorSettings.spritePackerMode == SpritePackerMode.AlwaysOn;
 
         public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();
+            tagToSpriteAtlas.Clear();
 
-            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
+            if (UsingLegacySpritePacker)
+            {
+                CacheLegacySpriteAtlases();
+            }
+            else
+            {
+                CacheSpriteAtlases();
+            }
             
+            SpriteAuditorUtility.ClearAtlasCacheDirty();
+        }
+
+        private static void CacheSpriteAtlases()
+        {
+            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
+
             for (int i = 0; i < atlasGUIDs.Length; i++)
             {
                 SpriteAtlas atlas =
@@ -36,19 +57,62 @@ namespace BrunoMikoski.SpriteAuditor
 
                 Sprite[] sprites = atlas.GetAllSprites().Distinct().ToArray();
 
-                float scale = 1.0f;
                 if (atlas.isVariant)
                 {
                     if (atlas.TryGetMasterAtlas(out SpriteAtlas masterAtlas))
                         sprites = masterAtlas.GetAllSprites().Distinct().ToArray();
-
-                    scale = atlas.GetVariantScale();
                 }
-                
+
                 atlasToAllSprites.Add(atlas, sprites);
             }
+        }
 
-            SpriteAuditorUtility.ClearAtlasCacheDirty();
+        private static void CacheLegacySpriteAtlases()
+        {
+            string[] spriteGUIDs = AssetDatabase.FindAssets("t:Sprite");
+            Dictionary<SpriteAtlas, List<Sprite>> tempAtlasToSprites = new Dictionary<SpriteAtlas, List<Sprite>>();
+
+            for (int i = 0; i < spriteGUIDs.Length; i++)
+            {
+                string spriteGUID = spriteGUIDs[i];
+                string spritePath = AssetDatabase.GUIDToAssetPath(spriteGUID);
+                TextureImporter textureImporter = (TextureImporter)AssetImporter.GetAtPath(spritePath);
+
+                if (textureImporter.textureType != TextureImporterType.Sprite)
+                    continue;
+
+                if (string.IsNullOrEmpty(textureImporter.spritePackingTag))
+                    continue;
+
+                SpriteAtlas spriteAtlas = GetOrCreateSpriteAtlasForTag(textureImporter);
+
+                if (!tempAtlasToSprites.ContainsKey(spriteAtlas))
+                    tempAtlasToSprites.Add(spriteAtlas, new List<Sprite>());
+
+                Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+
+                tempAtlasToSprites[spriteAtlas].Add(sprite);
+            }
+
+            foreach (var atlasToSprites in tempAtlasToSprites)
+            {
+                atlasToAllSprites.Add(atlasToSprites.Key, atlasToSprites.Value.ToArray());
+            }
+        }
+
+        private static SpriteAtlas GetOrCreateSpriteAtlasForTag(TextureImporter textureImporter)
+        {
+            if (!tagToSpriteAtlas.TryGetValue(textureImporter.spritePackingTag, out SpriteAtlas resultAtlas))
+            {
+                resultAtlas = new SpriteAtlas
+                {
+                    name = textureImporter.spritePackingTag
+                };
+                tagToSpriteAtlas.Add(textureImporter.spritePackingTag, resultAtlas);
+                return resultAtlas;
+            }
+
+            return resultAtlas;
         }
 
         public static bool TryGetAtlasesForSprite(Sprite targetSprite, out List<SpriteAtlas> atlases)
@@ -59,6 +123,9 @@ namespace BrunoMikoski.SpriteAuditor
             atlases = new List<SpriteAtlas>();
             foreach (var atlasToSprites in atlasToAllSprites)
             {
+                if (atlasToSprites.Key == null)
+                    continue;
+                
                 for (int i = 0; i < atlasToSprites.Value.Length; i++)
                 {
                     if (atlasToSprites.Value[i] == targetSprite)
@@ -74,18 +141,12 @@ namespace BrunoMikoski.SpriteAuditor
             if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();
 
-            foreach (var atlasToSprites in atlasToAllSprites)
+            if (TryGetAtlasesForSprite(targetSprite, out List<SpriteAtlas> atlases))
             {
-                for (int i = 0; i < atlasToSprites.Value.Length; i++)
-                {
-                    Sprite sprite = atlasToSprites.Value[i];
-                    if (sprite == targetSprite)
-                    {
-                        spriteAtlas = atlasToSprites.Key;
-                        return true;
-                    }
-                }
+                spriteAtlas = atlases[0]; 
+                return true;
             }
+
             spriteAtlas = null;
             return false;
         }
@@ -94,19 +155,8 @@ namespace BrunoMikoski.SpriteAuditor
         {
             if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();
-
-            List<SpriteAtlas> atlases = new List<SpriteAtlas>();
-            string[] atlasGUIDs = AssetDatabase.FindAssets("t:SpriteAtlas");
             
-            for (int i = 0; i < atlasGUIDs.Length; i++)
-            {
-                SpriteAtlas atlas =
-                    AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
-
-                atlases.Add(atlas);
-            }
-
-            return atlases;
+            return atlasToAllSprites.Keys.ToList();
         }
         
         public static Sprite[] GetAllSpritesFromAtlas(SpriteAtlas atlas)
@@ -117,10 +167,10 @@ namespace BrunoMikoski.SpriteAuditor
             if (atlasToAllSprites.TryGetValue(atlas, out Sprite[] sprites))
                 return sprites;
 
-            return new Sprite[0];
+            return Array.Empty<Sprite>();
         }
 
-        public static SpriteReferenceType GetSpriteToAtlasReferenceType(Sprite targetSprite, SpriteAtlas targetAtlas)
+        private static SpriteReferenceType GetSpriteToAtlasReferenceType(Sprite targetSprite, SpriteAtlas targetAtlas)
         {
             if (SpriteAuditorUtility.IsAtlasesDirty)
                 CacheKnowAtlases();

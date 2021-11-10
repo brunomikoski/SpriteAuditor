@@ -1,7 +1,7 @@
 {
   "name": "com.brunomikoski.spriteauditor",
   "displayName": "Sprite Auditor",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "unity": "2018.4",
   "description": "The missing tool for sprite management",
   "keywords": [

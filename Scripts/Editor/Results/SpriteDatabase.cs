@@ -11,7 +11,6 @@ namespace BrunoMikoski.SpriteAuditor
         [SerializeField]
         private List<SpriteData> spritesData = new List<SpriteData>(512);
         public List<SpriteData> SpritesData => spritesData;
-    
 
         public void ReportButton(Button button)
         {
@@ -22,6 +21,9 @@ namespace BrunoMikoski.SpriteAuditor
             if (buttonImage == null)
                 return;
 
+            if (buttonImage.sprite == null)
+                return;
+            
             SpriteData spriteData = GetOrCreateSpriteData(buttonImage.sprite);
             spriteData.ReportUse(buttonImage);
 
