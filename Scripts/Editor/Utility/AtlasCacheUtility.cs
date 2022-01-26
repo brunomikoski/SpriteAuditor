@@ -52,9 +52,6 @@ namespace BrunoMikoski.SpriteAuditor
                 SpriteAtlas atlas =
                     AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(atlasGUIDs[i]));
 
-                if (!atlas.IsIncludedInBuild())
-                    continue;
-
                 Sprite[] sprites = atlas.GetAllSprites().Distinct().ToArray();
 
                 if (atlas.isVariant)
