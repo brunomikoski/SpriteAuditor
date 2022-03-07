@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Purchasing;
 using UnityEngine;
-using EditorGUILayout = UnityEditor.Experimental.Networking.PlayerConnection.EditorGUILayout;
 using Object = UnityEngine.Object;
 
 namespace BrunoMikoski.SpriteAuditor
