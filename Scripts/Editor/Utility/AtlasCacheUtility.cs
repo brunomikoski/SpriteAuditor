@@ -23,9 +23,11 @@ namespace BrunoMikoski.SpriteAuditor
         private static Dictionary<SpriteAtlas, Sprite[]> atlasToAllSprites = new Dictionary<SpriteAtlas, Sprite[]>();
         private static Dictionary<string, SpriteAtlas> tagToSpriteAtlas = new Dictionary<string, SpriteAtlas>();
 
+#pragma warning disable 0618
         public static bool UsingLegacySpritePacker => EditorSettings.spritePackerMode == SpritePackerMode.BuildTimeOnly ||
                                                        EditorSettings.spritePackerMode == SpritePackerMode.AlwaysOn;
-
+#pragma warning enable 0618;
+        
         public static void CacheKnowAtlases()
         {
             atlasToAllSprites.Clear();

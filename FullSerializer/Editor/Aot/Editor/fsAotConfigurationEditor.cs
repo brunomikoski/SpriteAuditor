@@ -17,7 +17,7 @@ namespace FullSerializer {
 
 		private static void ModeChanged () {
 			if (!EditorApplication.isPlayingOrWillChangePlaymode && EditorApplication.isPlaying) {
-				Debug.Log("There are " + fsAotCompilationManager.AotCandidateTypes.Count + " candidate types");
+				// Debug.Log("There are " + fsAotCompilationManager.AotCandidateTypes.Count + " candidate types");
 				foreach (fsAotConfiguration target in Resources.FindObjectsOfTypeAll<fsAotConfiguration>()) {
 					var seen = new HashSet<string>(target.aotTypes.Select(t => t.FullTypeName));
 					foreach (Type type in fsAotCompilationManager.AotCandidateTypes) {
