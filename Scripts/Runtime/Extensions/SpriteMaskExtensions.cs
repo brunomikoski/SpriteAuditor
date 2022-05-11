@@ -1,5 +1,4 @@
-﻿
-namespace UnityEngine
+﻿namespace UnityEngine
 {
     public static partial class SpriteMaskExtensions
     {
