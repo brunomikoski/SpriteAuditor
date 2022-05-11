@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
-using Object = System.Object;
 
 namespace BrunoMikoski.SpriteAuditor
 {

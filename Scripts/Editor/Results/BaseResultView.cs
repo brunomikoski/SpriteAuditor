@@ -1,8 +1,6 @@
 ﻿using System;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
-using UnityEditor.U2D;
 using UnityEngine;
 
 namespace BrunoMikoski.SpriteAuditor

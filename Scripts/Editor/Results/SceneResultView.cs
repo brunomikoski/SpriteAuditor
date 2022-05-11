@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.U2D;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 

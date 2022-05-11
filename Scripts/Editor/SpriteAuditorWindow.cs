@@ -34,7 +34,6 @@ namespace BrunoMikoski.SpriteAuditor
         private float spriteUsageSizeThreshold = 0.25f;
 
         private BaseResultView resultView;
-        private bool isOpen;
         private int frameInterval = 1;
         private SearchField searchField;
 
@@ -79,7 +78,7 @@ namespace BrunoMikoski.SpriteAuditor
         }
         public static bool IsOpen()
         {
-            return GetWindowInstance().isOpen;
+            return HasOpenInstances<SpriteAuditorWindow>();
         }
 
         private void OnEnable()
@@ -88,14 +87,11 @@ namespace BrunoMikoski.SpriteAuditor
             SpriteAuditorUtility.SetMemoryDataDirty();
             SpriteAuditorUtility.SetResultViewDirty();
             SpriteAuditorUtility.SetSizeCheckThreshold(spriteUsageSizeThreshold);
-            isOpen = true;
         }
 
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
-            isOpen = false;
-
         }
 
         [DidReloadScripts]
