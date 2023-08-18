@@ -27,7 +27,7 @@ but also helping you see witch texture are in use that could be smaller.
 
 ## How to use
  - Set your target Resolution on the Game View 
- - Open the Sprite Auditor from the `Tools / Sprite Auditor` Menu
+ - Open the Sprite Auditor from the `Window / Analysis / Sprite Auditor` Menu
  - Make sure you you select the `Record on Play` option enable.
  - Play thought the project or let your Unit Test run to the project.
  - After this you can start optimizing your atlas
