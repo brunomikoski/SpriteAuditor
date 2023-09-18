@@ -49,6 +49,7 @@ namespace UnityEngine.U2D
         {
             List<Sprite> resultSprites = new List<Sprite>();
             Object[] objects = spriteAtlas.GetPackables();
+            if (spriteAtlas == null) return resultSprites;
             for (int i = 0; i < objects.Length; i++)
             {
                 Object packable = objects[i];
